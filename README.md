@@ -55,7 +55,7 @@ Many PDF notes, lecture images, and subtitles are difficult to reuse in Obsidian
 - Infer simple headings, bold text, lists, and paragraphs from PDF text blocks.
 - Convert detected PDF tables into Markdown tables.
 - Extract embedded PDF images as compressed WebP assets.
-- Choose PDF import mode: Structured Markdown, Raw Text Markdown, or Page Image Markdown fallback.
+- Convert PDFs with the single `manage-pdf-in-obsidian` profile.
 - Convert PNG, JPG, JPEG, and WebP images to compressed WebP.
 - Optional OCR wrapper with EasyOCR first and Tesseract fallback.
 - Convert SRT, VTT, TXT, and MD lecture transcripts into structured learning notes.
@@ -111,9 +111,10 @@ For `sample.pdf`:
 output/
 └─ sample/
    ├─ sample.md
-   └─ assets/
-      ├─ image_p001_001.webp
-      └─ table_p002_001.webp
+   └─ Files/
+      └─ sample/
+         ├─ p001-img01.webp
+         └─ p002-table01.webp
 ```
 
 Markdown example:
@@ -142,18 +143,18 @@ Paragraph text...
 
 ##### Image 1
 
-![[assets/image_p001_001.webp]]
+![[Files/sample/p001-img01.webp]]
 ```
 
 For `lecture.vtt`, the app creates a study note with overview, concepts, timeline sections, checklist, review questions, and Obsidian keyword links.
 
-## PDF Import Modes
+## PDF Conversion Profile
 
-- `Structured Markdown`: default mode. Converts PDF content into editable Markdown with inferred headings, paragraphs, lists, Markdown tables, links, and necessary images.
-- `Raw Text Markdown`: keeps extracted PDF text close to the source text layer, while still preserving detected tables and embedded images.
-- `Page Image Markdown`: fallback mode for scanned or very complex PDFs. Renders each PDF page as `page_001.webp`, `page_002.webp`, and inserts only page images.
+PDF conversion uses one profile: `manage-pdf-in-obsidian`.
 
-When PyMuPDF can detect a simple table structure, PDF2Obsidian writes it as a Markdown table. Irregular tables can be saved as table-only WebP fallbacks instead of being forced into broken Markdown.
+This profile keeps PDFs lightweight and editable in Obsidian. It does not insert full-page `page_001.webp` images by default. It extracts the text layer first, restores headings, paragraphs, lists, Markdown tables, links, and necessary images, then stores PDF assets under `Files/<PDF title>/`.
+
+When PyMuPDF can detect a simple table structure, PDF2Obsidian writes it as a Markdown table. Irregular tables can be saved as table-region WebP fallbacks instead of being forced into broken Markdown.
 
 ## Windows Notes
 

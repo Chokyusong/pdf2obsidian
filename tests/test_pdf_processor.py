@@ -23,8 +23,10 @@ def test_process_pdf_extracts_structured_text_and_embedded_images_without_page_r
     page = document.new_page(width=595, height=842)
     page.insert_text((72, 72), "Main Heading", fontsize=22)
     page.insert_text((72, 110), "Important", fontsize=12, fontname="Helvetica-Bold")
-    page.insert_text((72, 138), "- First list item", fontsize=12)
-    page.insert_image(fitz.Rect(72, 180, 312, 360), stream=_sample_png_bytes())
+    page.insert_text((72, 138), "First paragraph line", fontsize=12)
+    page.insert_text((72, 166), "Second paragraph line", fontsize=12)
+    page.insert_text((72, 194), "- First list item", fontsize=12)
+    page.insert_image(fitz.Rect(72, 236, 312, 416), stream=_sample_png_bytes())
     document.save(pdf_path)
     document.close()
 
@@ -34,27 +36,12 @@ def test_process_pdf_extracts_structured_text_and_embedded_images_without_page_r
     assert result.image_count == 1
     assert "## Main Heading" in result.pages[0].text
     assert "**Important**" in result.pages[0].text
+    assert "First paragraph line  \nSecond paragraph line" in result.pages[0].text
     assert "- First list item" in result.pages[0].text
     assert result.pages[0].page_asset_name is None
-    assert result.pages[0].images[0].asset_name.startswith("image_p001_")
+    assert result.pages[0].images[0].asset_name == "p001-img01.webp"
     assert not (assets_dir / "page_001.webp").exists()
     assert (assets_dir / result.pages[0].images[0].asset_name).exists()
-
-
-def test_process_pdf_renders_page_only_when_requested(tmp_path):
-    pdf_path = tmp_path / "sample.pdf"
-    assets_dir = tmp_path / "assets"
-
-    document = fitz.open()
-    page = document.new_page(width=595, height=842)
-    page.insert_text((72, 72), "Hello PDF text layer")
-    document.save(pdf_path)
-    document.close()
-
-    result = process_pdf(pdf_path, assets_dir, quality=75, render_pages=True)
-
-    assert result.pages[0].page_asset_name == "page_001.webp"
-    assert (assets_dir / "page_001.webp").exists()
 
 
 def test_process_pdf_uses_ocr_render_only_when_text_is_missing(tmp_path, monkeypatch):
@@ -79,7 +66,7 @@ def test_process_pdf_uses_ocr_render_only_when_text_is_missing(tmp_path, monkeyp
     assert result.pages[0].ocr_used is True
     assert result.pages[0].page_asset_name is None
     assert result.pages[0].text == "OCR fallback text"
-    assert (assets_dir / "ocr_page_001.webp").exists()
+    assert not (assets_dir / "ocr_page_001.webp").exists()
     assert not (assets_dir / "page_001.webp").exists()
 
 

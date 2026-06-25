@@ -16,8 +16,9 @@ Output:
 output/
 └─ sample/
    ├─ sample.md
-   └─ assets/
-      └─ image_p001_001.webp
+   └─ Files/
+      └─ sample/
+         └─ p001-img01.webp
 ```
 
 Markdown:
@@ -38,7 +39,7 @@ Extracted PDF text appears here.
 
 ##### Image 1
 
-![[assets/image_p001_001.webp]]
+![[Files/sample/p001-img01.webp]]
 
 ## Conversion Report
 
@@ -47,8 +48,9 @@ Extracted PDF text appears here.
 - Markdown tables: 1
 - Extracted PDF images: 1
 - Verification: text layer extraction was attempted before OCR.
-- Verification: page images are only inserted in Page Image Markdown fallback mode.
-- Verification: PDF-embedded images are extracted when large enough.
+- Conversion profile: manage-pdf-in-obsidian
+- Verification: full PDF pages are not inserted as default images.
+- Verification: only necessary PDF images and table-region fallbacks are saved.
 ```
 
 ## Image Import

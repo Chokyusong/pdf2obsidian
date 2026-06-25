@@ -37,10 +37,6 @@ TRANSLATIONS = {
         "mode_lecture": "Lecture subtitle summary",
         "mode_auto": "Auto detect",
         "quality": "Quality",
-        "pdf_import_mode": "PDF Import Mode",
-        "pdf_structured_markdown": "Structured Markdown",
-        "pdf_raw_text_markdown": "Raw Text Markdown",
-        "pdf_page_image_markdown": "Page Image Markdown (Fallback)",
         "ocr": "Use OCR when available",
         "separator": "Insert page separators",
         "transcript_preserve": "Transcript detail",
@@ -86,10 +82,6 @@ TRANSLATIONS = {
         "mode_lecture": "강의 자막 상세 정리",
         "mode_auto": "자동 판별",
         "quality": "이미지 품질",
-        "pdf_import_mode": "PDF 가져오기 모드",
-        "pdf_structured_markdown": "Structured Markdown",
-        "pdf_raw_text_markdown": "Raw Text Markdown",
-        "pdf_page_image_markdown": "Page Image Markdown (Fallback)",
         "ocr": "가능하면 OCR 사용",
         "separator": "페이지 구분선 삽입",
         "transcript_preserve": "자막 상세도",
@@ -208,7 +200,6 @@ class MainWindow(QMainWindow):
         self.quality_combo.setCurrentText("75")
 
         self.mode_combo = QComboBox()
-        self.pdf_import_mode_combo = QComboBox()
 
         self.ocr_checkbox = QCheckBox()
         self.separator_checkbox = QCheckBox()
@@ -273,12 +264,6 @@ class MainWindow(QMainWindow):
         options_row.addWidget(self.ocr_checkbox)
         options_row.addWidget(self.separator_checkbox)
 
-        pdf_options_row = QHBoxLayout()
-        self.pdf_import_mode_label = QLabel()
-        pdf_options_row.addWidget(self.pdf_import_mode_label)
-        pdf_options_row.addWidget(self.pdf_import_mode_combo)
-        pdf_options_row.addStretch(1)
-
         transcript_row = QHBoxLayout()
         self.transcript_preserve_label = QLabel()
         self.transcript_output_label = QLabel()
@@ -308,7 +293,6 @@ class MainWindow(QMainWindow):
         layout.addLayout(file_buttons)
         layout.addLayout(output_layout)
         layout.addLayout(options_row)
-        layout.addLayout(pdf_options_row)
         layout.addLayout(transcript_row)
         layout.addLayout(transcript_checks)
         layout.addWidget(self.progress_bar)
@@ -346,9 +330,6 @@ class MainWindow(QMainWindow):
         self.language = selected_language or "en"
 
         mode_value = self.mode_combo.currentData() or "auto"
-        pdf_import_mode_value = (
-            self.pdf_import_mode_combo.currentData() or "structured_markdown"
-        )
         preserve_value = self.preserve_combo.currentData() or "high"
         format_value = self.transcript_format_combo.currentData() or "study_note"
 
@@ -363,7 +344,6 @@ class MainWindow(QMainWindow):
         self.output_button.setText(self.tr("select_output_folder"))
         self.mode_label.setText(self.tr("mode"))
         self.quality_label.setText(self.tr("quality"))
-        self.pdf_import_mode_label.setText(self.tr("pdf_import_mode"))
         self.ocr_checkbox.setText(self.tr("ocr"))
         self.separator_checkbox.setText(self.tr("separator"))
         self.transcript_preserve_label.setText(self.tr("transcript_preserve"))
@@ -392,15 +372,6 @@ class MainWindow(QMainWindow):
                 (self.tr("preserve_high"), "high"),
             ],
             preserve_value,
-        )
-        self._reset_combo_items(
-            self.pdf_import_mode_combo,
-            [
-                (self.tr("pdf_structured_markdown"), "structured_markdown"),
-                (self.tr("pdf_raw_text_markdown"), "raw_text_markdown"),
-                (self.tr("pdf_page_image_markdown"), "page_image_markdown"),
-            ],
-            pdf_import_mode_value,
         )
         self._reset_combo_items(
             self.transcript_format_combo,
@@ -461,7 +432,6 @@ class MainWindow(QMainWindow):
             image_quality=int(self.quality_combo.currentText()),
             ocr_enabled=self.ocr_checkbox.isChecked(),
             include_page_separator=self.separator_checkbox.isChecked(),
-            pdf_import_mode=self.pdf_import_mode_combo.currentData(),
             mode=self.mode_combo.currentData(),
             transcript_preserve_level=self.preserve_combo.currentData(),
             transcript_output_format=self.transcript_format_combo.currentData(),

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import re
+import tempfile
 from dataclasses import dataclass
 from io import BytesIO, StringIO
 from pathlib import Path
@@ -266,7 +267,7 @@ def _render_structured_lines(lines: list[_TextLine]) -> str:
 
     def flush_paragraph() -> None:
         if paragraph:
-            blocks.append(" ".join(part.strip() for part in paragraph if part.strip()))
+            blocks.append("  \n".join(part.strip() for part in paragraph if part.strip()))
             paragraph.clear()
 
     for line in lines:
@@ -390,7 +391,7 @@ def _extract_tables(
         asset_name = None
         warning = None
         if _table_needs_image_fallback(rows) or not markdown:
-            asset_name = f"table_p{page_number:03d}_{table_index:03d}.webp"
+            asset_name = f"p{page_number:03d}-table{table_index:02d}.webp"
             _save_page_region(page, bbox, assets_dir / asset_name, quality)
             warning = "Table was too irregular for reliable Markdown; saved table image fallback."
             markdown = markdown or None
@@ -477,7 +478,6 @@ def process_pdf(
     assets_dir: str | Path,
     quality: int = 75,
     ocr_enabled: bool = False,
-    render_pages: bool = False,
 ) -> PDFDocumentResult:
     source = Path(input_path)
     assets = Path(assets_dir)
@@ -489,10 +489,6 @@ def process_pdf(
     with fitz.open(source) as document:
         for page_index, page in enumerate(document, start=1):
             page_asset_name = None
-            if render_pages:
-                page_asset_name = f"page_{page_index:03d}.webp"
-                _save_page_render(page, assets / page_asset_name, quality)
-
             tables, table_bboxes = _extract_tables(page, page_index, assets, quality)
             text = _extract_structured_text(page, table_bboxes)
             raw_text = _extract_raw_text(page, table_bboxes)
@@ -513,7 +509,7 @@ def process_pdf(
                     images.append(saved_xrefs[xref])
                     continue
 
-                asset_name = f"image_p{page_index:03d}_{image_index:03d}.webp"
+                asset_name = f"p{page_index:03d}-img{image_index:02d}.webp"
                 output_path = assets / asset_name
                 saved_width, saved_height = _save_pdf_image(document, xref, output_path, quality)
                 image_result = PDFImageResult(
@@ -527,16 +523,15 @@ def process_pdf(
                 images.append(image_result)
 
             if ocr_enabled and not text:
-                ocr_asset_name = page_asset_name or f"ocr_page_{page_index:03d}.webp"
-                page_output_path = assets / ocr_asset_name
-                if not page_output_path.exists():
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    page_output_path = Path(temp_dir) / f"ocr_page_{page_index:03d}.webp"
                     _save_page_render(page, page_output_path, quality)
-                # OCR is only attempted when the PDF has no extractable text on this page.
-                result = ocr.extract_text(page_output_path)
-                text = result.text
-                raw_text = result.text
-                warning = result.warning
-                ocr_used = True
+                    # OCR is only attempted when the PDF has no extractable text on this page.
+                    result = ocr.extract_text(page_output_path)
+                    text = result.text
+                    raw_text = result.text
+                    warning = result.warning
+                    ocr_used = True
 
             pages.append(
                 PDFPageResult(
