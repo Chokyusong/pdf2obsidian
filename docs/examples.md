@@ -189,6 +189,27 @@ Cleaned and reorganized transcript text appears here in timestamp order.
 1. 이 개념을 내 작업에 어떻게 적용할 수 있는가?
 ```
 
+### Future Lecture Structuring Example
+
+This synthetic example shows a known MVP limitation and the target direction. Do not use real paid lectures, instructor names, private transcripts, or user-uploaded course text as examples.
+
+Bad example:
+
+```markdown
+- Core concepts: "여러분의", "목표를", "시스템을"
+```
+
+Good example:
+
+```markdown
+- Core concepts:
+  - RAS / 망상활성계
+  - 정보 필터링
+  - 목표 설정
+  - 뇌 내비게이션
+  - 실행 행동
+```
+
 ## Local-First Privacy Model
 
 - Files are read from the local disk.

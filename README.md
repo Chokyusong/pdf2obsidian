@@ -161,6 +161,12 @@ Paragraph text...
 
 For `lecture.vtt`, the app creates a study note with overview, concepts, timeline sections, checklist, review questions, and Obsidian keyword links.
 
+## Lecture Notes Future Direction
+
+PDF2Obsidian currently converts lecture subtitles into structured Markdown notes. A future goal is to improve this into meaning-aware lecture note structuring, where subtitles are merged, grouped, and reorganized into readable study notes for Obsidian.
+
+The default mode should work without external AI APIs. Rule-based structuring should be improved first. Optional local LLM support such as Ollama can be explored later. Optional OpenAI API support may be considered only as an enhancement, never as a required dependency.
+
 ## Before / After Conversion Example
 
 The project documentation uses only synthetic or redistributable examples. Private PDFs, paid course material, subtitle transcripts, and personal Obsidian notes must not be committed as examples.

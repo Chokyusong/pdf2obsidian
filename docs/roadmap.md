@@ -30,6 +30,11 @@ The project does not aim to become a general quiz, flashcard, mind map, or chatb
 - Add transcript parsing tests.
 - Improve PDF visual layout fidelity.
 - Improve lecture subtitle cleanup and detailed reconstruction.
+- Start Lecture Transcript Structuring improvements:
+  - Merge subtitle lines into readable paragraphs.
+  - Split lecture transcripts by semantic sections, not only timestamps.
+  - Detect common lecture patterns such as introduction, definition, example, summary, mission, checklist, and review questions.
+  - Improve keyword extraction so meaningless frequent words are not treated as core concepts.
 - Improve OCR setup documentation.
 - Add image size controls.
 - Add Markdown template settings.
@@ -41,14 +46,32 @@ The project does not aim to become a general quiz, flashcard, mind map, or chatb
 - Table extraction research.
 - Local web app prototype with FastAPI or Streamlit.
 - Optional zip export.
-- More transcript templates.
+- More transcript templates for Obsidian-ready study notes.
+- Generate lecture notes with overview, key concepts, examples, action steps, cautions, review questions, and execution checklist.
 - YouTube subtitle import workflow.
 
 ## Later
 
-- Optional local LLM integration only for lecture-note reconstruction.
+- Optional local LLM integration, such as Ollama, only for lecture-note reconstruction.
+- Optional OpenAI API support may be considered only as an enhancement, never as a required dependency.
 - Automated release packaging.
 - Signed Windows installer research.
+
+## Lecture Transcript Structuring
+
+The current lecture transcript feature is an MVP that converts subtitle files into Markdown study notes. Future work should improve it into meaning-aware structuring while preserving the local-first default.
+
+Default mode should work without external AI APIs. Rule-based structuring should be improved first. Optional local LLM support such as Ollama can be explored later. Optional OpenAI API support may be considered only as an enhancement, never as a required dependency.
+
+Target output:
+
+- Lecture overview.
+- Key concepts.
+- Examples.
+- Action steps.
+- Cautions.
+- Review questions.
+- Execution checklist.
 
 ## Open Source Maintenance Goals
 

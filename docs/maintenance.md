@@ -35,3 +35,31 @@ Expose the core converter through a CLI command for batch conversion without sta
 ### Add sample files that are safe for public repository
 
 Generate tiny synthetic PDFs, images, and subtitle files for tests and documentation.
+
+### Improve subtitle line merging into readable paragraphs
+
+Merge fragmented subtitle lines into readable paragraphs without losing timestamp order.
+
+### Add semantic section detection for lecture transcripts
+
+Detect lecture sections such as introduction, definition, example, summary, mission, checklist, and review questions.
+
+### Improve Korean lecture keyword extraction
+
+Avoid treating meaningless frequent words as core concepts in Korean lecture notes.
+
+### Add rule-based lecture pattern detection
+
+Implement local rule-based detection before considering optional AI enhancements.
+
+### Add optional local LLM enhancement plan
+
+Document how optional local LLM tools such as Ollama could improve lecture note structuring without becoming required dependencies.
+
+### Add regression tests for lecture note structuring
+
+Cover subtitle merging, semantic section detection, keyword extraction, examples, action steps, cautions, review questions, and checklist output.
+
+### Add before/after examples for subtitle-to-study-note conversion
+
+Use synthetic subtitle samples only. Do not commit real lecture names, instructor names, paid course titles, or raw private transcripts.
