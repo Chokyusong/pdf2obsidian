@@ -75,6 +75,16 @@ def write_pdf_markdown(
             lines.extend([f"![[assets/{page.page_asset_name}]]", ""])
 
         if selected_mode in {PDF_IMPORT_TEXT, PDF_IMPORT_TEXT_PAGE_IMAGE}:
+            for table_index, table in enumerate(page.tables, start=1):
+                lines.extend(
+                    [
+                        f"### Extracted table {table_index}",
+                        "",
+                        table.markdown,
+                        "",
+                    ]
+                )
+
             if selected_mode == PDF_IMPORT_TEXT_PAGE_IMAGE:
                 lines.extend(["### Extracted text", ""])
 
@@ -102,6 +112,7 @@ def write_pdf_markdown(
         [
             f"- Source pages: {pdf_result.page_count}",
             f"- Extracted text characters: {pdf_result.text_char_count}",
+            f"- Extracted PDF tables: {pdf_result.table_count}",
             f"- Extracted PDF images: {pdf_result.image_count}",
             f"- Original PDF size: {pdf_result.source_size_bytes:,} bytes",
             f"- Saved asset size: {pdf_result.asset_size_bytes:,} bytes",

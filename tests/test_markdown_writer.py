@@ -19,6 +19,15 @@ def test_write_pdf_markdown_creates_obsidian_links(tmp_path):
             page_number=1,
             page_asset_name="page_001.webp",
             text="First line\nSecond line",
+            tables=[
+                SimpleNamespace(
+                    page_number=1,
+                    markdown="| Step | Asset |\n| --- | --- |\n| Week 1 | Card news |",
+                    row_count=2,
+                    col_count=2,
+                    bbox=(10.0, 10.0, 100.0, 100.0),
+                )
+            ],
             images=[
                 SimpleNamespace(
                     page_number=1,
@@ -34,6 +43,7 @@ def test_write_pdf_markdown_creates_obsidian_links(tmp_path):
             page_number=2,
             page_asset_name="page_002.webp",
             text="Second page text.",
+            tables=[],
             images=[],
             ocr_warning=None,
         ),
@@ -42,6 +52,7 @@ def test_write_pdf_markdown_creates_obsidian_links(tmp_path):
         pages=pages,
         page_count=2,
         text_char_count=29,
+        table_count=1,
         image_count=1,
         source_size_bytes=10_000,
         asset_size_bytes=2_000,
@@ -67,7 +78,9 @@ def test_write_pdf_markdown_creates_obsidian_links(tmp_path):
     assert "![[assets/image_p001_001.webp]]" in content
     assert "## Page 1" in content
     assert "First line  \nSecond line" in content
+    assert "| Step | Asset |" in content
     assert "## Conversion Report" in content
+    assert "Extracted PDF tables: 1" in content
     assert "Extracted PDF images: 1" in content
 
 
@@ -87,6 +100,7 @@ def test_write_pdf_markdown_text_mode_outputs_text_and_embedded_images(tmp_path)
 
     assert "![[assets/page_001.webp]]" not in content
     assert "First line  \nSecond line" in content
+    assert "| Step | Asset |" in content
     assert "![[assets/image_p001_001.webp]]" in content
     assert "PDF import mode: text_markdown" in content
 
@@ -107,6 +121,7 @@ def test_write_pdf_markdown_page_image_mode_outputs_only_page_images(tmp_path):
 
     assert "![[assets/page_001.webp]]" in content
     assert "First line" not in content
+    assert "| Step | Asset |" not in content
     assert "![[assets/image_p001_001.webp]]" not in content
     assert "PDF import mode: page_image_markdown" in content
 
@@ -126,9 +141,10 @@ def test_write_pdf_markdown_text_page_image_mode_orders_content(tmp_path):
     content = markdown_path.read_text(encoding="utf-8")
 
     page_index = content.index("![[assets/page_001.webp]]")
+    table_index = content.index("| Step | Asset |")
     text_index = content.index("First line")
     image_index = content.index("![[assets/image_p001_001.webp]]")
-    assert page_index < text_index < image_index
+    assert page_index < table_index < text_index < image_index
     assert "PDF import mode: text_page_image_markdown" in content
 
 
@@ -176,6 +192,15 @@ def _pdf_result(text: str = "First line\nSecond line", ocr_warning: str | None =
             page_number=1,
             page_asset_name="page_001.webp",
             text=text,
+            tables=[
+                SimpleNamespace(
+                    page_number=1,
+                    markdown="| Step | Asset |\n| --- | --- |\n| Week 1 | Card news |",
+                    row_count=2,
+                    col_count=2,
+                    bbox=(10.0, 10.0, 100.0, 100.0),
+                )
+            ],
             images=[
                 SimpleNamespace(
                     page_number=1,
@@ -191,6 +216,7 @@ def _pdf_result(text: str = "First line\nSecond line", ocr_warning: str | None =
             page_number=2,
             page_asset_name="page_002.webp",
             text="Second page text.",
+            tables=[],
             images=[],
             ocr_warning=None,
         ),
@@ -199,6 +225,7 @@ def _pdf_result(text: str = "First line\nSecond line", ocr_warning: str | None =
         pages=pages,
         page_count=2,
         text_char_count=29,
+        table_count=1,
         image_count=1,
         source_size_bytes=10_000,
         asset_size_bytes=2_000,

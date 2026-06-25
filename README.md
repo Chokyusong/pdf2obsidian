@@ -53,6 +53,7 @@ Many PDF notes, lecture images, and subtitles are difficult to reuse in Obsidian
 - Convert PDF files to Markdown.
 - Extract PDF page text with PyMuPDF.
 - Render PDF pages as WebP previews.
+- Convert detected PDF tables into Markdown tables.
 - Extract embedded PDF images as compressed WebP assets.
 - Choose PDF import mode: Text Markdown, Page Image Markdown, or Text + Page Image Markdown.
 - Convert PNG, JPG, JPEG, and WebP images to compressed WebP.
@@ -147,6 +148,8 @@ For `lecture.vtt`, the app creates a study note with overview, concepts, timelin
 - `Text Markdown`: extracts searchable text and embedded PDF images.
 - `Page Image Markdown`: renders each PDF page as `page_001.webp`, `page_002.webp`, and inserts only page images.
 - `Text + Page Image Markdown`: inserts the page image first, then extracted text, then embedded images. This is the default mode.
+
+When PyMuPDF can detect a table structure, PDF2Obsidian writes it as a Markdown table. Complex borderless tables may still require manual cleanup.
 
 ## Windows Notes
 

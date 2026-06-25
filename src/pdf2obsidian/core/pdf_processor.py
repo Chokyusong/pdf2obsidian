@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import contextlib
 from dataclasses import dataclass
-from io import BytesIO
+from io import BytesIO, StringIO
 from pathlib import Path
 
 import fitz
@@ -20,10 +21,20 @@ class PDFImageResult:
 
 
 @dataclass(frozen=True)
+class PDFTableResult:
+    page_number: int
+    markdown: str
+    row_count: int
+    col_count: int
+    bbox: tuple[float, float, float, float]
+
+
+@dataclass(frozen=True)
 class PDFPageResult:
     page_number: int
     page_asset_name: str
     text: str
+    tables: list[PDFTableResult]
     images: list[PDFImageResult]
     ocr_warning: str | None = None
 
@@ -41,6 +52,10 @@ class PDFDocumentResult:
     @property
     def image_count(self) -> int:
         return sum(len(page.images) for page in self.pages)
+
+    @property
+    def table_count(self) -> int:
+        return sum(len(page.tables) for page in self.pages)
 
     @property
     def text_char_count(self) -> int:
@@ -76,13 +91,31 @@ def _clean_pdf_text(text: str) -> str:
     return "\n\n".join(paragraph for paragraph in paragraphs if paragraph)
 
 
-def _extract_layout_text(page: fitz.Page) -> str:
+def _intersects_table(
+    block_bbox: tuple[float, float, float, float],
+    table_bboxes: list[fitz.Rect],
+) -> bool:
+    block_rect = fitz.Rect(block_bbox)
+    block_area = max(block_rect.get_area(), 1)
+
+    for table_rect in table_bboxes:
+        overlap = block_rect & table_rect
+        if not overlap.is_empty and overlap.get_area() / block_area > 0.4:
+            return True
+
+    return False
+
+
+def _extract_layout_text(page: fitz.Page, table_bboxes: list[fitz.Rect] | None = None) -> str:
     """Extract text by visual blocks so line breaks survive better in Markdown."""
+    table_bboxes = table_bboxes or []
     blocks: list[str] = []
     text_dict = page.get_text("dict", sort=True)
 
     for block in text_dict.get("blocks", []):
         if block.get("type") != 0:
+            continue
+        if _intersects_table(block.get("bbox", (0, 0, 0, 0)), table_bboxes):
             continue
 
         lines: list[str] = []
@@ -99,7 +132,65 @@ def _extract_layout_text(page: fitz.Page) -> str:
     if blocks:
         return "\n\n".join(blocks)
 
+    if table_bboxes:
+        return ""
+
     return _clean_pdf_text(page.get_text("text", sort=True))
+
+
+def _table_to_markdown(rows: list[list[str | None]]) -> str:
+    cleaned_rows = [
+        [str(cell or "").replace("|", "\\|").replace("\n", "<br>").strip() for cell in row]
+        for row in rows
+    ]
+    cleaned_rows = [row for row in cleaned_rows if any(cell for cell in row)]
+    if not cleaned_rows:
+        return ""
+
+    column_count = max(len(row) for row in cleaned_rows)
+    normalized = [row + [""] * (column_count - len(row)) for row in cleaned_rows]
+    header = normalized[0]
+    body = normalized[1:]
+
+    lines = [
+        "| " + " | ".join(header) + " |",
+        "| " + " | ".join("---" for _ in range(column_count)) + " |",
+    ]
+    for row in body:
+        lines.append("| " + " | ".join(row) + " |")
+    return "\n".join(lines)
+
+
+def _extract_tables(
+    page: fitz.Page,
+    page_number: int,
+) -> tuple[list[PDFTableResult], list[fitz.Rect]]:
+    tables: list[PDFTableResult] = []
+    bboxes: list[fitz.Rect] = []
+
+    # PyMuPDF can print advisory text while finding tables; keep conversion logs clean.
+    with contextlib.redirect_stdout(StringIO()), contextlib.redirect_stderr(StringIO()):
+        table_finder = page.find_tables()
+
+    for table in table_finder.tables:
+        rows = table.extract()
+        markdown = _table_to_markdown(rows)
+        if not markdown:
+            continue
+
+        bbox = tuple(float(value) for value in table.bbox)
+        tables.append(
+            PDFTableResult(
+                page_number=page_number,
+                markdown=markdown,
+                row_count=int(table.row_count),
+                col_count=int(table.col_count),
+                bbox=bbox,
+            )
+        )
+        bboxes.append(fitz.Rect(table.bbox))
+
+    return tables, bboxes
 
 
 def _should_keep_image(width: int, height: int) -> bool:
@@ -156,7 +247,8 @@ def process_pdf(
             page_output_path = assets / page_asset_name
             _save_page_render(page, page_output_path, quality)
 
-            text = _extract_layout_text(page)
+            tables, table_bboxes = _extract_tables(page, page_index)
+            text = _extract_layout_text(page, table_bboxes)
             warning = None
             images: list[PDFImageResult] = []
 
@@ -196,6 +288,7 @@ def process_pdf(
                     page_number=page_index,
                     page_asset_name=page_asset_name,
                     text=text,
+                    tables=tables,
                     images=images,
                     ocr_warning=warning,
                 )
