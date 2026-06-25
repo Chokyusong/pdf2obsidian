@@ -23,6 +23,87 @@ from PySide6.QtWidgets import (
 from pdf2obsidian.core.converter import ConversionOptions, convert_files
 from pdf2obsidian.utils.paths import is_supported
 
+TRANSLATIONS = {
+    "en": {
+        "window_title": "PDF2Obsidian",
+        "language": "Language",
+        "files": "Files",
+        "select_files": "Select files",
+        "remove_selected": "Remove selected",
+        "clear": "Clear",
+        "select_output_folder": "Select output folder",
+        "mode": "Mode",
+        "mode_pdf_image": "PDF/Image conversion",
+        "mode_lecture": "Lecture subtitle summary",
+        "mode_auto": "Auto detect",
+        "quality": "Quality",
+        "ocr": "Use OCR when available",
+        "separator": "Insert page separators",
+        "transcript_preserve": "Transcript detail",
+        "preserve_low": "Low",
+        "preserve_medium": "Medium",
+        "preserve_high": "High",
+        "output": "Output",
+        "format_detailed": "Detailed lecture note",
+        "format_clean": "Clean transcript",
+        "keep_timestamps": "Keep timestamps",
+        "log": "Log",
+        "start": "Start conversion",
+        "open_output": "Open output folder",
+        "drop_tooltip": "Drop PDF, image, or transcript files here.",
+        "file_dialog_title": "Select files",
+        "file_dialog_filter": (
+            "Supported files (*.pdf *.png *.jpg *.jpeg *.webp *.srt *.vtt *.txt *.md)"
+        ),
+        "output_dialog_title": "Select output folder",
+        "no_files_title": "No files",
+        "no_files_message": "Add at least one file first.",
+        "skipped": "Skipped unsupported file: {name}",
+        "starting": "Starting conversion.",
+        "finished": "Conversion finished.",
+        "failed_title": "Conversion failed",
+        "error": "Error: {message}",
+    },
+    "ko": {
+        "window_title": "PDF2Obsidian",
+        "language": "언어",
+        "files": "파일",
+        "select_files": "파일 선택",
+        "remove_selected": "선택 항목 제거",
+        "clear": "전체 지우기",
+        "select_output_folder": "출력 폴더 선택",
+        "mode": "변환 모드",
+        "mode_pdf_image": "PDF/이미지 변환",
+        "mode_lecture": "강의 자막 상세 정리",
+        "mode_auto": "자동 판별",
+        "quality": "이미지 품질",
+        "ocr": "가능하면 OCR 사용",
+        "separator": "페이지 구분선 삽입",
+        "transcript_preserve": "자막 상세도",
+        "preserve_low": "낮음",
+        "preserve_medium": "중간",
+        "preserve_high": "높음",
+        "output": "출력 형식",
+        "format_detailed": "상세 강의 노트",
+        "format_clean": "정리된 자막",
+        "keep_timestamps": "타임스탬프 유지",
+        "log": "로그",
+        "start": "변환 시작",
+        "open_output": "출력 폴더 열기",
+        "drop_tooltip": "PDF, 이미지, 자막 파일을 여기에 드래그하세요.",
+        "file_dialog_title": "파일 선택",
+        "file_dialog_filter": "지원 파일 (*.pdf *.png *.jpg *.jpeg *.webp *.srt *.vtt *.txt *.md)",
+        "output_dialog_title": "출력 폴더 선택",
+        "no_files_title": "파일 없음",
+        "no_files_message": "파일을 하나 이상 추가하세요.",
+        "skipped": "지원하지 않는 파일 건너뜀: {name}",
+        "starting": "변환을 시작합니다.",
+        "finished": "변환이 완료되었습니다.",
+        "failed_title": "변환 실패",
+        "error": "오류: {message}",
+    },
+}
+
 
 class DropListWidget(QListWidget):
     files_dropped = Signal(list)
@@ -93,9 +174,15 @@ class MainWindow(QMainWindow):
         self.resize(820, 650)
         self.worker: ConversionWorker | None = None
         self.last_output_folder = Path.cwd() / "output"
+        self.language = "en"
 
         self.file_list = DropListWidget()
         self.file_list.files_dropped.connect(self.add_files)
+
+        self.language_combo = QComboBox()
+        self.language_combo.addItem("English", "en")
+        self.language_combo.addItem("한국어", "ko")
+        self.language_combo.currentIndexChanged.connect(self.apply_language)
 
         self.output_label = QLabel(str(self.last_output_folder))
         self.quality_combo = QComboBox()
@@ -103,26 +190,16 @@ class MainWindow(QMainWindow):
         self.quality_combo.setCurrentText("75")
 
         self.mode_combo = QComboBox()
-        self.mode_combo.addItem("PDF/Image conversion", "pdf_image")
-        self.mode_combo.addItem("Lecture transcript note", "lecture")
-        self.mode_combo.addItem("Auto detect", "auto")
-        self.mode_combo.setCurrentIndex(2)
 
-        self.ocr_checkbox = QCheckBox("Use OCR when available")
-        self.separator_checkbox = QCheckBox("Insert page separators")
+        self.ocr_checkbox = QCheckBox()
+        self.separator_checkbox = QCheckBox()
         self.separator_checkbox.setChecked(True)
 
         self.preserve_combo = QComboBox()
-        self.preserve_combo.addItem("Low", "low")
-        self.preserve_combo.addItem("Medium", "medium")
-        self.preserve_combo.addItem("High", "high")
-        self.preserve_combo.setCurrentIndex(2)
 
         self.transcript_format_combo = QComboBox()
-        self.transcript_format_combo.addItem("Detailed lecture note", "detailed_lecture_note")
-        self.transcript_format_combo.addItem("Clean transcript", "clean_transcript")
 
-        self.keep_timestamps_checkbox = QCheckBox("Keep timestamps")
+        self.keep_timestamps_checkbox = QCheckBox()
         self.keep_timestamps_checkbox.setChecked(True)
 
         self.progress_bar = QProgressBar()
@@ -131,57 +208,71 @@ class MainWindow(QMainWindow):
         self.log_area = QTextEdit()
         self.log_area.setReadOnly(True)
 
-        self.open_output_button = QPushButton("Open output folder")
+        self.open_output_button = QPushButton()
         self.open_output_button.setEnabled(False)
         self.open_output_button.clicked.connect(self.open_output_folder)
 
         self._build_layout()
+        self.apply_language()
 
     def _build_layout(self) -> None:
-        add_files_button = QPushButton("Select files")
-        add_files_button.clicked.connect(self.select_files)
-        remove_button = QPushButton("Remove selected")
-        remove_button.clicked.connect(self.remove_selected_files)
-        clear_button = QPushButton("Clear")
-        clear_button.clicked.connect(self.file_list.clear)
+        self.add_files_button = QPushButton()
+        self.add_files_button.clicked.connect(self.select_files)
+        self.remove_button = QPushButton()
+        self.remove_button.clicked.connect(self.remove_selected_files)
+        self.clear_button = QPushButton()
+        self.clear_button.clicked.connect(self.file_list.clear)
 
         file_buttons = QHBoxLayout()
-        file_buttons.addWidget(add_files_button)
-        file_buttons.addWidget(remove_button)
-        file_buttons.addWidget(clear_button)
+        file_buttons.addWidget(self.add_files_button)
+        file_buttons.addWidget(self.remove_button)
+        file_buttons.addWidget(self.clear_button)
 
-        output_button = QPushButton("Select output folder")
-        output_button.clicked.connect(self.select_output_folder)
+        self.output_button = QPushButton()
+        self.output_button.clicked.connect(self.select_output_folder)
         output_layout = QHBoxLayout()
-        output_layout.addWidget(output_button)
+        output_layout.addWidget(self.output_button)
         output_layout.addWidget(self.output_label, stretch=1)
 
+        self.language_label = QLabel()
+        language_row = QHBoxLayout()
+        language_row.addWidget(self.language_label)
+        language_row.addWidget(self.language_combo)
+        language_row.addStretch(1)
+
         options_row = QHBoxLayout()
-        options_row.addWidget(QLabel("Mode"))
+        self.mode_label = QLabel()
+        self.quality_label = QLabel()
+        options_row.addWidget(self.mode_label)
         options_row.addWidget(self.mode_combo)
-        options_row.addWidget(QLabel("Quality"))
+        options_row.addWidget(self.quality_label)
         options_row.addWidget(self.quality_combo)
         options_row.addWidget(self.ocr_checkbox)
         options_row.addWidget(self.separator_checkbox)
 
         transcript_row = QHBoxLayout()
-        transcript_row.addWidget(QLabel("Transcript preserve"))
+        self.transcript_preserve_label = QLabel()
+        self.transcript_output_label = QLabel()
+        transcript_row.addWidget(self.transcript_preserve_label)
         transcript_row.addWidget(self.preserve_combo)
-        transcript_row.addWidget(QLabel("Output"))
+        transcript_row.addWidget(self.transcript_output_label)
         transcript_row.addWidget(self.transcript_format_combo)
 
         transcript_checks = QHBoxLayout()
         transcript_checks.addWidget(self.keep_timestamps_checkbox)
 
-        start_button = QPushButton("Start conversion")
-        start_button.clicked.connect(self.start_conversion)
+        self.start_button = QPushButton()
+        self.start_button.clicked.connect(self.start_conversion)
 
         bottom_row = QHBoxLayout()
-        bottom_row.addWidget(start_button)
+        bottom_row.addWidget(self.start_button)
         bottom_row.addWidget(self.open_output_button)
 
+        self.files_label = QLabel()
+        self.log_label = QLabel()
         layout = QVBoxLayout()
-        layout.addWidget(QLabel("Files"))
+        layout.addLayout(language_row)
+        layout.addWidget(self.files_label)
         layout.addWidget(self.file_list)
         layout.addLayout(file_buttons)
         layout.addLayout(output_layout)
@@ -189,7 +280,7 @@ class MainWindow(QMainWindow):
         layout.addLayout(transcript_row)
         layout.addLayout(transcript_checks)
         layout.addWidget(self.progress_bar)
-        layout.addWidget(QLabel("Log"))
+        layout.addWidget(self.log_label)
         layout.addWidget(self.log_area, stretch=1)
         layout.addLayout(bottom_row)
 
@@ -197,12 +288,88 @@ class MainWindow(QMainWindow):
         central.setLayout(layout)
         self.setCentralWidget(central)
 
+    def tr(self, key: str, **kwargs: str) -> str:
+        text = TRANSLATIONS[self.language][key]
+        return text.format(**kwargs) if kwargs else text
+
+    def _reset_combo_items(
+        self,
+        combo: QComboBox,
+        items: list[tuple[str, str]],
+        selected_data: str | None = None,
+    ) -> None:
+        combo.blockSignals(True)
+        combo.clear()
+        for label, data in items:
+            combo.addItem(label, data)
+        if selected_data is not None:
+            for index in range(combo.count()):
+                if combo.itemData(index) == selected_data:
+                    combo.setCurrentIndex(index)
+                    break
+        combo.blockSignals(False)
+
+    def apply_language(self) -> None:
+        selected_language = self.language_combo.currentData()
+        self.language = selected_language or "en"
+
+        mode_value = self.mode_combo.currentData() or "auto"
+        preserve_value = self.preserve_combo.currentData() or "high"
+        format_value = self.transcript_format_combo.currentData() or "detailed_lecture_note"
+
+        self.setWindowTitle(self.tr("window_title"))
+        self.file_list.setToolTip(self.tr("drop_tooltip"))
+
+        self.language_label.setText(self.tr("language"))
+        self.files_label.setText(self.tr("files"))
+        self.add_files_button.setText(self.tr("select_files"))
+        self.remove_button.setText(self.tr("remove_selected"))
+        self.clear_button.setText(self.tr("clear"))
+        self.output_button.setText(self.tr("select_output_folder"))
+        self.mode_label.setText(self.tr("mode"))
+        self.quality_label.setText(self.tr("quality"))
+        self.ocr_checkbox.setText(self.tr("ocr"))
+        self.separator_checkbox.setText(self.tr("separator"))
+        self.transcript_preserve_label.setText(self.tr("transcript_preserve"))
+        self.transcript_output_label.setText(self.tr("output"))
+        self.keep_timestamps_checkbox.setText(self.tr("keep_timestamps"))
+        self.log_label.setText(self.tr("log"))
+        self.start_button.setText(self.tr("start"))
+        self.open_output_button.setText(self.tr("open_output"))
+
+        self._reset_combo_items(
+            self.mode_combo,
+            [
+                (self.tr("mode_pdf_image"), "pdf_image"),
+                (self.tr("mode_lecture"), "lecture"),
+                (self.tr("mode_auto"), "auto"),
+            ],
+            mode_value,
+        )
+        self._reset_combo_items(
+            self.preserve_combo,
+            [
+                (self.tr("preserve_low"), "low"),
+                (self.tr("preserve_medium"), "medium"),
+                (self.tr("preserve_high"), "high"),
+            ],
+            preserve_value,
+        )
+        self._reset_combo_items(
+            self.transcript_format_combo,
+            [
+                (self.tr("format_detailed"), "detailed_lecture_note"),
+                (self.tr("format_clean"), "clean_transcript"),
+            ],
+            format_value,
+        )
+
     def select_files(self) -> None:
         files, _ = QFileDialog.getOpenFileNames(
             self,
-            "Select files",
+            self.tr("file_dialog_title"),
             str(Path.cwd()),
-            "Supported files (*.pdf *.png *.jpg *.jpeg *.webp *.srt *.vtt *.txt *.md)",
+            self.tr("file_dialog_filter"),
         )
         self.add_files(files)
 
@@ -214,7 +381,7 @@ class MainWindow(QMainWindow):
                 self.file_list.addItem(str(path))
                 existing.add(str(path))
             elif path.is_file():
-                self.append_log(f"Skipped unsupported file: {path.name}")
+                self.append_log(self.tr("skipped", name=path.name))
 
     def remove_selected_files(self) -> None:
         for item in self.file_list.selectedItems():
@@ -224,7 +391,7 @@ class MainWindow(QMainWindow):
     def select_output_folder(self) -> None:
         folder = QFileDialog.getExistingDirectory(
             self,
-            "Select output folder",
+            self.tr("output_dialog_title"),
             str(self.last_output_folder),
         )
         if folder:
@@ -237,7 +404,7 @@ class MainWindow(QMainWindow):
     def start_conversion(self) -> None:
         files = self._collect_files()
         if not files:
-            QMessageBox.warning(self, "No files", "Add at least one file first.")
+            QMessageBox.warning(self, self.tr("no_files_title"), self.tr("no_files_message"))
             return
 
         self.last_output_folder.mkdir(parents=True, exist_ok=True)
@@ -256,7 +423,7 @@ class MainWindow(QMainWindow):
 
         self.progress_bar.setValue(0)
         self.open_output_button.setEnabled(False)
-        self.append_log("Starting conversion.")
+        self.append_log(self.tr("starting"))
         self.worker = ConversionWorker(files, options)
         self.worker.log_message.connect(self.append_log)
         self.worker.progress_changed.connect(self.progress_bar.setValue)
@@ -270,11 +437,11 @@ class MainWindow(QMainWindow):
     def conversion_finished(self, output_folder: str) -> None:
         self.last_output_folder = Path(output_folder)
         self.open_output_button.setEnabled(True)
-        self.append_log("Conversion finished.")
+        self.append_log(self.tr("finished"))
 
     def conversion_failed(self, message: str) -> None:
-        self.append_log(f"Error: {message}")
-        QMessageBox.critical(self, "Conversion failed", message)
+        self.append_log(self.tr("error", message=message))
+        QMessageBox.critical(self, self.tr("failed_title"), message)
 
     def open_output_folder(self) -> None:
         self.last_output_folder.mkdir(parents=True, exist_ok=True)
