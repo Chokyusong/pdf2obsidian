@@ -10,7 +10,7 @@ PDF2Obsidian은 Obsidian 사용자와 학습자료 관리자를 위한 local-fir
 
 사용자의 파일을 외부 서버로 업로드하지 않으며, OpenAI, Claude, Gemini 같은 외부 AI API를 필수로 사용하지 않습니다. Windows 사용자가 로컬에서 쉽게 실행하는 것을 1차 목표로 합니다.
 
-![PDF2Obsidian GUI](docs/assets/gui-screenshot.png)
+![PDF2Obsidian GUI with sample PDF loaded](docs/assets/gui-sample-course-loaded.png)
 
 ## 프로젝트 목표
 
@@ -178,9 +178,17 @@ type: "pdf-import"
 - [sample_course.pdf](docs/samples/sample_course.pdf): 표지, 목차, 본문 섹션, 단순 표 1개, 체크리스트, 링크, synthetic 다이어그램 5개를 포함한 PDF입니다.
 - [sample_lecture.vtt](docs/samples/sample_lecture.vtt): 도입, 핵심 개념, 예시, 실습 안내, 정리, 복습 질문, 실행 미션 흐름을 가진 약 100개 타임라인 cue 자막입니다.
 
+데스크톱 사용 흐름:
+
+![PDF sample loaded in PDF2Obsidian](docs/assets/gui-sample-course-loaded.png)
+
+![Lecture subtitle sample loaded in PDF2Obsidian](docs/assets/gui-sample-lecture-loaded.png)
+
 ### PDF to Obsidian Markdown
 
 샘플 PDF는 실제 PDF2Obsidian 변환기로 변환했습니다. 문서용으로 선별한 결과는 [sample_course.md](docs/demo-output/sample_course.md)에서 확인할 수 있습니다.
+
+![PDF before and Markdown after in Obsidian](docs/assets/obsidian-sample-course.png)
 
 변환된 Markdown에는 다음이 포함됩니다.
 
@@ -194,6 +202,8 @@ type: "pdf-import"
 
 샘플 VTT는 강의 자막 정리 모드로 변환했습니다. 문서용으로 선별한 결과는 [sample_lecture.md](docs/demo-output/sample_lecture.md)에서 확인할 수 있습니다.
 
+![Lecture transcript converted to an Obsidian study note](docs/assets/obsidian-sample-lecture.png)
+
 변환된 노트에는 다음이 포함됩니다.
 
 - 강의 개요
@@ -203,6 +213,8 @@ type: "pdf-import"
 - 실행 문장이 감지된 경우 실행 체크리스트
 
 ### Output Folder Structure
+
+![Demo output folder](docs/assets/output-folder-demo.png)
 
 ```text
 docs/

@@ -13,3 +13,4 @@ output/
 *.egg-info/
 private/
 docs/prompts/
+docs/png/

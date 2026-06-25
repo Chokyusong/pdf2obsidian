@@ -10,7 +10,7 @@ PDF2Obsidian is a local-first open-source desktop tool for Obsidian users and le
 
 It is designed for Windows users who want to keep their files on their own computer. The app does not upload files to a server and does not use external AI APIs such as OpenAI, Claude, or Gemini.
 
-![PDF2Obsidian GUI](docs/assets/gui-screenshot.png)
+![PDF2Obsidian GUI with sample PDF loaded](docs/assets/gui-sample-course-loaded.png)
 
 ## Project Goal
 
@@ -178,9 +178,17 @@ Demo inputs:
 - [sample_course.pdf](docs/samples/sample_course.pdf): cover, table of contents, body sections, one simple table, checklist, link, and five synthetic diagrams.
 - [sample_lecture.vtt](docs/samples/sample_lecture.vtt): about 100 timestamped subtitle cues covering introduction, concepts, examples, practice, summary, review questions, and mission.
 
+Desktop workflow:
+
+![PDF sample loaded in PDF2Obsidian](docs/assets/gui-sample-course-loaded.png)
+
+![Lecture subtitle sample loaded in PDF2Obsidian](docs/assets/gui-sample-lecture-loaded.png)
+
 ### PDF to Obsidian Markdown
 
 The sample PDF was converted with the actual PDF2Obsidian converter. The selected documentation output is available at [sample_course.md](docs/demo-output/sample_course.md).
+
+![PDF before and Markdown after in Obsidian](docs/assets/obsidian-sample-course.png)
 
 The converted Markdown includes:
 
@@ -194,6 +202,8 @@ The converted Markdown includes:
 
 The sample VTT was converted with the lecture transcript mode. The selected documentation output is available at [sample_lecture.md](docs/demo-output/sample_lecture.md).
 
+![Lecture transcript converted to an Obsidian study note](docs/assets/obsidian-sample-lecture.png)
+
 The converted note includes:
 
 - Lecture overview.
@@ -203,6 +213,8 @@ The converted note includes:
 - Execution checklist when action sentences are detected.
 
 ### Output Folder Structure
+
+![Demo output folder](docs/assets/output-folder-demo.png)
 
 ```text
 docs/
