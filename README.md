@@ -6,7 +6,7 @@
 [![Release](https://img.shields.io/github/v/release/Chokyusong/pdf2obsidian)](https://github.com/Chokyusong/pdf2obsidian/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-PDF2Obsidian is a local desktop tool that converts PDF, image, and lecture subtitle files into Obsidian-ready Markdown.
+PDF2Obsidian is a local-first open-source desktop tool for Obsidian users and learning-material managers. It converts PDF, image, and lecture subtitle files into Obsidian-ready Markdown and lightweight assets.
 
 It is designed for Windows users who want to keep their files on their own computer. The app does not upload files to a server and does not use external AI APIs such as OpenAI, Claude, or Gemini.
 
@@ -34,7 +34,7 @@ The default workflow should stay different from cloud AI products. PDF2Obsidian 
 
 Target capabilities:
 
-- PDF conversion: layout-aware text extraction, heading/list/table restoration, embedded image extraction, fallback page images, and Obsidian Markdown output.
+- PDF conversion: layout-aware text extraction, heading/list/table restoration, embedded image extraction, table-region fallbacks, and Obsidian Markdown output.
 - Subtitle conversion: SRT/VTT/TXT/MD parsing, repeated speech cleanup, lecture-flow preservation, concept explanation, examples, procedures, cautions, and final summary.
 - YouTube subtitle workflow: import downloaded YouTube subtitles first; direct URL support can be added later.
 - Output: Markdown folder with assets, ready to move into an Obsidian vault.
@@ -47,6 +47,16 @@ Many PDF notes, lecture images, and subtitles are difficult to reuse in Obsidian
 2. Convert pages or images to compressed WebP assets.
 3. Generate Markdown with Obsidian wiki-style image links.
 4. Open the output folder and move the result into your vault.
+
+## Target Users
+
+- Obsidian users who want reusable Markdown instead of static PDFs.
+- Students who organize class PDFs, diagrams, and lecture subtitles.
+- Researchers who need local conversion without sending documents to a server.
+- Knowledge workers who maintain personal knowledge bases.
+- Lecture material managers who prepare searchable study notes from local files.
+
+PDF2Obsidian should remain usable without OpenAI, Claude, Gemini, or any external AI API.
 
 ## Main Features
 
@@ -69,6 +79,7 @@ Many PDF notes, lecture images, and subtitles are difficult to reuse in Obsidian
 
 - [Examples](docs/examples.md)
 - [Roadmap](docs/roadmap.md)
+- [Maintenance tasks](docs/maintenance.md)
 - [Web app plan](docs/webapp-plan.md)
 - [Contributing](CONTRIBUTING.md)
 
@@ -149,6 +160,32 @@ Paragraph text...
 ```
 
 For `lecture.vtt`, the app creates a study note with overview, concepts, timeline sections, checklist, review questions, and Obsidian keyword links.
+
+## Before / After Conversion Example
+
+The project documentation uses only synthetic or redistributable examples. Private PDFs, paid course material, subtitle transcripts, and personal Obsidian notes must not be committed as examples.
+
+Before:
+
+```text
+sample.pdf
+├─ Page 1: title, paragraphs, and an embedded diagram
+└─ Page 2: simple table and source link
+```
+
+After:
+
+```text
+output/
+└─ sample/
+   ├─ sample.md
+   └─ Files/
+      └─ sample/
+         ├─ p001-img01.webp
+         └─ p002-table01.webp
+```
+
+The generated Markdown keeps small PDF page markers, searchable text, Markdown tables when possible, Obsidian wiki image links, and a conversion report.
 
 ## PDF Conversion Profile
 
@@ -232,6 +269,17 @@ Run lint:
 ```powershell
 ruff check .
 ```
+
+## How Codex Support Will Be Used
+
+Codex support would be used to improve open-source maintenance work, not to make external AI APIs a required runtime dependency. Planned uses include:
+
+- Improve PDF conversion quality across real-world documents.
+- Add regression tests for PDF text extraction, embedded images, tables, and transcripts.
+- Automate Windows build verification.
+- Review pull requests for privacy, local-first behavior, and maintainability.
+- Check for accidental hardcoded private file names, local paths, or sample documents.
+- Improve documentation for non-developer Obsidian users.
 
 ## Roadmap
 

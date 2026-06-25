@@ -62,7 +62,7 @@ PDF2Obsidian은 PDF 변환기가 아니다.
 
 - Study Note
 - 전자책 원고
-- LLM Wiki
+- Local Wiki
 - Obsidian MOC
 - Flashcards
 - Q&A
