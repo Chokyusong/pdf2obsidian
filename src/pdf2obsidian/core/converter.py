@@ -53,6 +53,14 @@ def _title_for(source: Path) -> str:
     return sanitize_filename(source.stem)
 
 
+def _format_bytes(size: int) -> str:
+    if size < 1024:
+        return f"{size} B"
+    if size < 1024 * 1024:
+        return f"{size / 1024:.1f} KB"
+    return f"{size / (1024 * 1024):.1f} MB"
+
+
 def convert_file(
     input_path: str | Path,
     options: ConversionOptions,
@@ -81,6 +89,14 @@ def convert_file(
                 source,
                 item_dir,
                 quality=options.image_quality,
+            )
+            reduction = compression_result.size_reduction_percent
+            reduction_text = "unknown" if reduction is None else f"{reduction:.1f}%"
+            emit(
+                "PDF compression result: "
+                f"{_format_bytes(compression_result.source_size_bytes)} -> "
+                f"{_format_bytes(compression_result.output_size_bytes)} "
+                f"({reduction_text} smaller)"
             )
             return ConversionResult(
                 source,

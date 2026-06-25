@@ -52,6 +52,7 @@ def test_pdf_webp_compression_creates_compressed_pdf_and_report(tmp_path):
     document.save(pdf_path)
     document.close()
 
+    logs: list[str] = []
     result = convert_file(
         pdf_path,
         ConversionOptions(
@@ -59,6 +60,7 @@ def test_pdf_webp_compression_creates_compressed_pdf_and_report(tmp_path):
             pdf_output_format="webp_compression",
             image_quality=60,
         ),
+        log=logs.append,
     )
 
     compressed_pdf = result.output_dir / "sample-compressed.pdf"
@@ -69,6 +71,8 @@ def test_pdf_webp_compression_creates_compressed_pdf_and_report(tmp_path):
     assert compressed_pdf.exists()
     assert report.exists()
     assert "PDF Compression Report" in report.read_text(encoding="utf-8")
+    assert any("PDF compression result:" in message for message in logs)
+    assert any("smaller" in message for message in logs)
 
     with fitz.open(compressed_pdf) as compressed:
         assert compressed.page_count == 1
