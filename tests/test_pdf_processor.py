@@ -6,7 +6,11 @@ import fitz
 from PIL import Image, ImageDraw
 
 from pdf2obsidian.core import ocr
-from pdf2obsidian.core.pdf_processor import process_pdf
+from pdf2obsidian.core.pdf_processor import (
+    _render_structured_lines,
+    _TextLine,
+    process_pdf,
+)
 
 
 def _sample_png_bytes() -> bytes:
@@ -72,6 +76,35 @@ def test_process_pdf_skips_blank_images_and_keeps_real_images_sequential(tmp_pat
     assert result.pages[0].images[0].asset_name == "p001-img01.webp"
     assert (assets_dir / "p001-img01.webp").exists()
     assert not (assets_dir / "p001-img02.webp").exists()
+
+
+def test_structured_text_merges_standalone_bullets_with_next_line():
+    text = _render_structured_lines(
+        [
+            _TextLine("PROMPT 49", "PROMPT 49", 18.0, 0.0, (0, 0, 100, 20)),
+            _TextLine("럭셔리 주얼리 화보", "럭셔리 주얼리 화보", 12.0, 0.0, (0, 30, 200, 50)),
+            _TextLine("●", "●", 12.0, 0.0, (0, 60, 10, 70)),
+            _TextLine(
+                "여성의 얼굴 옆면과 귀만 보이는 타이트한 크롭 구도",
+                "여성의 얼굴 옆면과 귀만 보이는 타이트한 크롭 구도",
+                12.0,
+                0.0,
+                (20, 60, 320, 70),
+            ),
+            _TextLine("●", "●", 12.0, 0.0, (0, 90, 10, 100)),
+            _TextLine(
+                "눈 일부, 볼, 귀, 귀걸이만 프레임에 포함",
+                "눈 일부, 볼, 귀, 귀걸이만 프레임에 포함",
+                12.0,
+                0.0,
+                (20, 90, 320, 100),
+            ),
+        ]
+    )
+
+    assert "●\n\n여성의 얼굴" not in text
+    assert "●여성의 얼굴 옆면과 귀만 보이는 타이트한 크롭 구도" in text
+    assert "●눈 일부, 볼, 귀, 귀걸이만 프레임에 포함" in text
 
 
 def test_process_pdf_uses_ocr_render_only_when_text_is_missing(tmp_path, monkeypatch):

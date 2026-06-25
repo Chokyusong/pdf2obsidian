@@ -236,8 +236,12 @@ def _body_font_size(lines: list[_TextLine]) -> float:
 
 def _is_list_line(text: str) -> bool:
     return bool(
-        re.match(r"^(\s*)([-*]\s+|[•◦▪]\s+|\d+[.)]\s+|\[[ xX]\]\s+)", text)
+        re.match(r"^(\s*)([-*]\s+|[•◦▪●○]\s*|\d+[.)]\s+|\[[ xX]\]\s+)", text)
     )
+
+
+def _is_standalone_bullet(text: str) -> bool:
+    return text.strip() in {"•", "◦", "▪", "●", "○", "∙", "·", "-"}
 
 
 def _is_heading_candidate(line: _TextLine, body_size: float) -> int:
@@ -254,7 +258,7 @@ def _is_heading_candidate(line: _TextLine, body_size: float) -> int:
 
 
 def _normalize_list_marker(text: str) -> str:
-    return re.sub(r"^\s*[•◦▪]\s+", "- ", text)
+    return re.sub(r"^\s*([•◦▪●○])\s*", r"\1", text)
 
 
 def _render_structured_lines(lines: list[_TextLine]) -> str:
@@ -264,6 +268,7 @@ def _render_structured_lines(lines: list[_TextLine]) -> str:
     body_size = _body_font_size(lines)
     blocks: list[str] = []
     paragraph: list[str] = []
+    pending_bullet: str | None = None
 
     def flush_paragraph() -> None:
         if paragraph:
@@ -274,6 +279,17 @@ def _render_structured_lines(lines: list[_TextLine]) -> str:
         text = line.text.strip()
         plain = line.plain_text.strip()
         if not text:
+            continue
+
+        if _is_standalone_bullet(plain):
+            flush_paragraph()
+            pending_bullet = plain
+            continue
+
+        if pending_bullet:
+            flush_paragraph()
+            blocks.append(f"{pending_bullet}{text}")
+            pending_bullet = None
             continue
 
         heading_level = _is_heading_candidate(line, body_size)
