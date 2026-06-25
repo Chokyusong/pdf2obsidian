@@ -10,6 +10,9 @@ The desktop app is the first target, but the conversion logic is kept under `cor
 - Runs on the user's PC at `localhost`.
 - Files are not sent to an external server.
 - Calls the same converter used by the desktop GUI.
+- Supports PDF, image, subtitle, Markdown, and text uploads.
+- Preserves PDF visual layout with page previews and layout-aware text extraction.
+- Converts lecture or YouTube subtitles into detailed study notes.
 
 ### Phase 2: Hosted Website
 
@@ -17,6 +20,7 @@ The desktop app is the first target, but the conversion logic is kept under `cor
 - The server converts files and returns a zip download.
 - Clear privacy guidance is required.
 - Temporary upload cleanup must be automatic.
+- Hosted AI features are not part of the default scope.
 
 ### Phase 3: SaaS
 
@@ -34,3 +38,20 @@ The desktop app is the first target, but the conversion logic is kept under `cor
 - Job queue: Celery or RQ.
 - Storage: local file system first, then S3-compatible storage.
 - Deployment: Docker.
+
+## Feature Boundary
+
+In scope:
+
+- PDF to visual-layout-preserving Markdown.
+- PDF page WebP previews and embedded image extraction.
+- Lecture and YouTube subtitle files to detailed study notes.
+- Obsidian-ready Markdown output.
+
+Out of scope for now:
+
+- Quiz generation.
+- Flashcards.
+- Mind maps.
+- Chatbots.
+- Required external AI APIs.

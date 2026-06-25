@@ -79,6 +79,32 @@ def _has_any(text: str, terms: list[str]) -> bool:
     return any(term in text for term in terms)
 
 
+def _chunk_blocks(
+    blocks: list[TranscriptBlock],
+    target_chars: int = 1400,
+) -> list[list[TranscriptBlock]]:
+    chunks: list[list[TranscriptBlock]] = []
+    current: list[TranscriptBlock] = []
+    size = 0
+
+    for block in blocks:
+        current.append(block)
+        size += len(block.text)
+        if size >= target_chars:
+            chunks.append(current)
+            current = []
+            size = 0
+
+    if current:
+        chunks.append(current)
+
+    return chunks
+
+
+def _chunk_text(chunk: list[TranscriptBlock]) -> str:
+    return " ".join(block.text for block in chunk).strip()
+
+
 def _write_auto_income_note(lines: list[str], full_text: str) -> None:
     lines.extend(
         [
@@ -155,34 +181,74 @@ def _write_auto_income_note(lines: list[str], full_text: str) -> None:
     )
 
 
-def _write_generic_note(lines: list[str], full_text: str, keywords: list[str]) -> None:
+def _write_generic_note(
+    lines: list[str],
+    full_text: str,
+    keywords: list[str],
+    blocks: list[TranscriptBlock],
+) -> None:
     topic = keywords[0] if keywords else "핵심 주제"
     selected = _select_sentences(full_text, keywords[:5], limit=8)
 
     lines.extend(
         [
-            "## 한 문장 핵심",
+            "## 1. 한 문장 핵심",
             "",
             _paragraph(selected[:1], f"이 자료는 {topic}에 대한 핵심 내용을 다룬다."),
             "",
-            f"## {topic} 정리",
+            "## 2. 강의 전체 요약",
             "",
-            _paragraph(selected[1:5], "자막 내용을 시간 순서에 맞춰 읽기 쉽게 정리했습니다."),
+            _paragraph(
+                selected[1:6],
+                "자막의 반복 표현을 제거하고 강의 흐름을 보존해 학습 자료로 정리했습니다.",
+            ),
             "",
-            "## 실행 체크리스트",
+            "## 3. 핵심 개념",
             "",
         ]
     )
 
-    checklist_items = keywords[:4] or ["핵심 내용 확인", "실행 항목 정리"]
-    for item in checklist_items:
-        lines.append(f"- {item} 관련 내용을 확인한다.")
+    for keyword in keywords[:6]:
+        lines.append(f"- **{keyword}**: 강의에서 반복적으로 등장하는 핵심 키워드입니다.")
 
-    lines.extend(["", "## 핵심 정리", ""])
-    for sentence in selected[-3:]:
+    lines.extend(["", "## 4. 강의 흐름별 상세 정리", ""])
+    for index, chunk in enumerate(_chunk_blocks(blocks), start=1):
+        start = chunk[0].start if chunk and chunk[0].start else f"Part {index}"
+        chunk_sentences = _sentences(_chunk_text(chunk))
+        detail = " ".join(chunk_sentences) if chunk_sentences else _chunk_text(chunk)
+        lines.extend([f"### {start} - Part {index}", "", detail, ""])
+
+    lines.extend(["## 5. 예시와 실행 포인트", ""])
+    example_sentences = _select_sentences(
+        full_text,
+        ["예를", "예시", "방법", "단계", "먼저", "다음", "해야", "하면"],
+        limit=8,
+    )
+    lines.append(
+        _paragraph(
+            example_sentences,
+            "자막에서 명확한 예시나 실행 단계가 드러나지 않으면, "
+            "상세 정리에서 행동으로 옮길 문장을 표시해 사용합니다.",
+        )
+    )
+
+    lines.extend(["", "## 6. 주의할 부분", ""])
+    caution_sentences = _select_sentences(
+        full_text,
+        ["주의", "실수", "문제", "하지", "안 됩니다", "중요", "반드시"],
+        limit=6,
+    )
+    lines.append(
+        _paragraph(
+            caution_sentences,
+            "강의에서 강조한 조건, 전제, 예외가 있다면 원문 자막과 함께 확인합니다.",
+        )
+    )
+
+    lines.extend(["", "## 7. 최종 정리", ""])
+    final_sentences = selected[-4:] or _sentences(full_text)[-4:]
+    for sentence in final_sentences:
         lines.append(f"- {sentence}")
-    if not selected:
-        lines.append("- 자막의 반복 표현과 불필요한 공백을 정리했습니다.")
 
 
 def write_lecture_note(
@@ -221,7 +287,7 @@ def write_lecture_note(
     if _has_any(full_text, ["자동 수익", "노동 수익", "디지털 자산", "전자책"]):
         _write_auto_income_note(lines, full_text)
     else:
-        _write_generic_note(lines, full_text, keywords)
+        _write_generic_note(lines, full_text, keywords, blocks)
 
     path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
     return path

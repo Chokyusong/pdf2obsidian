@@ -1,12 +1,21 @@
 # PDF2Obsidian Roadmap
 
+## Product Focus
+
+PDF2Obsidian focuses on two outcomes:
+
+1. Convert PDFs into Obsidian Markdown without drifting away from the original visual layout.
+2. Convert lecture or YouTube subtitles into detailed study material that can be understood without watching the original video.
+
+The project does not aim to become a general quiz, flashcard, mind map, or chatbot app. Optional local AI may be considered later only if it improves lecture-note reconstruction while keeping the local-first workflow.
+
 ## 0.1.0 MVP
 
 - PDF file selection and conversion.
 - Image file selection and conversion.
 - Drag and drop in the desktop GUI.
 - PDF text extraction with PyMuPDF.
-- PDF text extraction and embedded image export.
+- PDF page rendering, text extraction, and embedded image export.
 - Image compression to WebP.
 - Optional local OCR wrapper.
 - Obsidian Markdown output.
@@ -19,6 +28,8 @@
 - Add downloadable Windows release asset.
 - Add more real-world sample outputs.
 - Add transcript parsing tests.
+- Improve PDF visual layout fidelity.
+- Improve lecture subtitle cleanup and detailed reconstruction.
 - Improve OCR setup documentation.
 - Add image size controls.
 - Add Markdown template settings.
@@ -31,11 +42,11 @@
 - Local web app prototype with FastAPI or Streamlit.
 - Optional zip export.
 - More transcript templates.
+- YouTube subtitle import workflow.
 
 ## Later
 
-- Optional local LLM integration through user-installed tools such as Ollama.
-- Obsidian MOC generation.
+- Optional local LLM integration only for lecture-note reconstruction.
 - Automated release packaging.
 - Signed Windows installer research.
 

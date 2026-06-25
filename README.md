@@ -17,10 +17,27 @@ It is designed for Windows users who want to keep their files on their own compu
 PDF2Obsidian helps students, researchers, and knowledge workers turn static learning material into reusable Obsidian notes. The first MVP focuses on reliable local conversion instead of cloud automation:
 
 - PDF text layers become lightweight Markdown.
+- PDF pages become visual WebP previews for layout fidelity.
 - Embedded PDF images become compressed WebP assets.
 - Images become compressed WebP assets plus Markdown.
 - Lecture subtitles become structured study notes.
 - Optional OCR runs only with locally installed OCR tools.
+
+## Final Product Vision
+
+The long-term goal is focused on two workflows:
+
+1. Convert PDF files into Markdown without drifting away from the original visual layout.
+2. Convert lecture or YouTube subtitles into detailed study material that can replace watching the original lecture.
+
+The default workflow should stay different from cloud AI products. PDF2Obsidian should not require external AI APIs or required cloud uploads. Advanced AI features should be optional and user-controlled through local tools.
+
+Target capabilities:
+
+- PDF conversion: page-level WebP previews, layout-aware text extraction, embedded image extraction, and Obsidian Markdown output.
+- Subtitle conversion: SRT/VTT/TXT/MD parsing, repeated speech cleanup, lecture-flow preservation, concept explanation, examples, procedures, cautions, and final summary.
+- YouTube subtitle workflow: import downloaded YouTube subtitles first; direct URL support can be added later.
+- Output: Markdown folder with assets, ready to move into an Obsidian vault.
 
 ## Why This Exists
 
@@ -35,6 +52,7 @@ Many PDF notes, lecture images, and subtitles are difficult to reuse in Obsidian
 
 - Convert PDF files to Markdown.
 - Extract PDF page text with PyMuPDF.
+- Render PDF pages as WebP previews.
 - Extract embedded PDF images as compressed WebP assets.
 - Convert PNG, JPG, JPEG, and WebP images to compressed WebP.
 - Optional OCR wrapper with EasyOCR first and Tesseract fallback.
@@ -92,6 +110,7 @@ output/
 └─ sample/
    ├─ sample.md
    └─ assets/
+      ├─ page_001.webp
       └─ image_p001_001.webp
 ```
 
@@ -109,7 +128,13 @@ type: "pdf-import"
 
 ## Page 1
 
+![[assets/page_001.webp]]
+
+### Extracted text
+
 Extracted text...
+
+### Extracted image image_p001_001.webp
 
 ![[assets/image_p001_001.webp]]
 ```
@@ -180,12 +205,13 @@ ruff check .
 
 ## Roadmap
 
+- Build toward a local-first study assistant experience.
 - Improve OCR quality.
 - Extract tables.
 - Optimize output image dimensions.
 - Add Markdown template settings.
 - Add local web app mode.
-- Add optional local LLM support.
+- Add optional local LLM support only for better lecture-note reconstruction.
 - Automate release builds.
 
 ## Future Web App Direction

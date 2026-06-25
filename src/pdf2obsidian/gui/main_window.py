@@ -116,19 +116,14 @@ class MainWindow(QMainWindow):
         self.preserve_combo.addItem("Low", "low")
         self.preserve_combo.addItem("Medium", "medium")
         self.preserve_combo.addItem("High", "high")
-        self.preserve_combo.setCurrentIndex(1)
+        self.preserve_combo.setCurrentIndex(2)
 
         self.transcript_format_combo = QComboBox()
-        self.transcript_format_combo.addItem("Study note", "study_note")
-        self.transcript_format_combo.addItem("Ebook draft", "ebook_draft")
-        self.transcript_format_combo.addItem("Obsidian MOC", "obsidian_moc")
+        self.transcript_format_combo.addItem("Detailed lecture note", "detailed_lecture_note")
+        self.transcript_format_combo.addItem("Clean transcript", "clean_transcript")
 
         self.keep_timestamps_checkbox = QCheckBox("Keep timestamps")
         self.keep_timestamps_checkbox.setChecked(True)
-        self.review_questions_checkbox = QCheckBox("Generate review questions")
-        self.review_questions_checkbox.setChecked(True)
-        self.checklist_checkbox = QCheckBox("Generate checklist")
-        self.checklist_checkbox.setChecked(True)
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
@@ -177,8 +172,6 @@ class MainWindow(QMainWindow):
 
         transcript_checks = QHBoxLayout()
         transcript_checks.addWidget(self.keep_timestamps_checkbox)
-        transcript_checks.addWidget(self.review_questions_checkbox)
-        transcript_checks.addWidget(self.checklist_checkbox)
 
         start_button = QPushButton("Start conversion")
         start_button.clicked.connect(self.start_conversion)
@@ -257,8 +250,8 @@ class MainWindow(QMainWindow):
             transcript_preserve_level=self.preserve_combo.currentData(),
             transcript_output_format=self.transcript_format_combo.currentData(),
             transcript_keep_timestamps=self.keep_timestamps_checkbox.isChecked(),
-            transcript_review_questions=self.review_questions_checkbox.isChecked(),
-            transcript_checklist=self.checklist_checkbox.isChecked(),
+            transcript_review_questions=False,
+            transcript_checklist=False,
         )
 
         self.progress_bar.setValue(0)
