@@ -51,6 +51,7 @@ Many PDF notes, lecture images, and subtitles are difficult to reuse in Obsidian
 ## Main Features
 
 - Convert PDF files to Markdown.
+- Compress PDF files into rasterized, smaller PDFs as a separate output mode.
 - Extract PDF page text with PyMuPDF.
 - Infer simple headings, bold text, lists, and paragraphs from PDF text blocks.
 - Convert detected PDF tables into Markdown tables.
@@ -93,9 +94,10 @@ python -m pdf2obsidian.main
 2. Add PDF, image, or subtitle files with the file button or drag and drop.
 3. Choose an output folder.
 4. Choose image quality: 60, 75, or 90.
-5. Enable OCR only when you have a local OCR engine installed.
-6. Click `Start Conversion`.
-7. Open the output folder after conversion.
+5. In `PDF/Image conversion` mode, choose `Markdown + Image` or `WebP Compression`.
+6. Enable OCR only when you have a local OCR engine installed.
+7. Click `Start Conversion`.
+8. Open the output folder after conversion.
 
 Default output is created under:
 
@@ -155,6 +157,19 @@ PDF conversion uses one profile: `manage-pdf-in-obsidian`.
 This profile keeps PDFs lightweight and editable in Obsidian. It does not insert full-page `page_001.webp` images by default. It extracts the text layer first, restores headings, paragraphs, lists, Markdown tables, links, and necessary images, then stores PDF assets under `Files/<PDF title>/`.
 
 When PyMuPDF can detect a simple table structure, PDF2Obsidian writes it as a Markdown table. Irregular tables can be saved as table-region WebP fallbacks instead of being forced into broken Markdown.
+
+## PDF Compression
+
+In `PDF/Image conversion` mode, choose `WebP Compression` from `Output` to create:
+
+```text
+output/
+└─ sample/
+   ├─ sample-compressed.pdf
+   └─ sample-compression-report.md
+```
+
+This compression mode rasterizes each page, applies lossy WebP-based compression, and rebuilds a smaller PDF. It is separate from Markdown conversion and may not preserve selectable text, links, outlines, annotations, or form fields.
 
 ## Windows Notes
 

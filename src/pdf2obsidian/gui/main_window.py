@@ -37,6 +37,8 @@ TRANSLATIONS = {
         "mode_lecture": "Lecture subtitle summary",
         "mode_auto": "Auto detect",
         "quality": "Quality",
+        "pdf_output_markdown_image": "Markdown + Image",
+        "pdf_output_webp_compression": "WebP Compression",
         "ocr": "Use OCR when available",
         "separator": "Insert page separators",
         "transcript_preserve": "Transcript detail",
@@ -82,6 +84,8 @@ TRANSLATIONS = {
         "mode_lecture": "강의 자막 상세 정리",
         "mode_auto": "자동 판별",
         "quality": "이미지 품질",
+        "pdf_output_markdown_image": "Markdown + Image",
+        "pdf_output_webp_compression": "WebP 압축",
         "ocr": "가능하면 OCR 사용",
         "separator": "페이지 구분선 삽입",
         "transcript_preserve": "자막 상세도",
@@ -200,6 +204,7 @@ class MainWindow(QMainWindow):
         self.quality_combo.setCurrentText("75")
 
         self.mode_combo = QComboBox()
+        self.mode_combo.currentIndexChanged.connect(self.update_output_options)
 
         self.ocr_checkbox = QCheckBox()
         self.separator_checkbox = QCheckBox()
@@ -331,7 +336,7 @@ class MainWindow(QMainWindow):
 
         mode_value = self.mode_combo.currentData() or "auto"
         preserve_value = self.preserve_combo.currentData() or "high"
-        format_value = self.transcript_format_combo.currentData() or "study_note"
+        output_value = self.transcript_format_combo.currentData()
 
         self.setWindowTitle(self.tr("window_title"))
         self.file_list.setToolTip(self.tr("drop_tooltip"))
@@ -373,15 +378,31 @@ class MainWindow(QMainWindow):
             ],
             preserve_value,
         )
-        self._reset_combo_items(
-            self.transcript_format_combo,
-            [
+        self._refresh_output_options(output_value)
+
+    def _output_items_for_mode(self, mode: str | None) -> list[tuple[str, str]]:
+        if mode == "lecture":
+            return [
                 (self.tr("format_study_note"), "study_note"),
                 (self.tr("format_ebook_draft"), "ebook_draft"),
                 (self.tr("format_obsidian_moc"), "obsidian_moc"),
-            ],
-            format_value,
+            ]
+
+        return [
+            (self.tr("pdf_output_markdown_image"), "markdown_image"),
+            (self.tr("pdf_output_webp_compression"), "webp_compression"),
+        ]
+
+    def _refresh_output_options(self, selected_data: str | None = None) -> None:
+        mode_value = self.mode_combo.currentData() or "auto"
+        self._reset_combo_items(
+            self.transcript_format_combo,
+            self._output_items_for_mode(mode_value),
+            selected_data,
         )
+
+    def update_output_options(self) -> None:
+        self._refresh_output_options(self.transcript_format_combo.currentData())
 
     def select_files(self) -> None:
         files, _ = QFileDialog.getOpenFileNames(
@@ -433,6 +454,7 @@ class MainWindow(QMainWindow):
             ocr_enabled=self.ocr_checkbox.isChecked(),
             include_page_separator=self.separator_checkbox.isChecked(),
             mode=self.mode_combo.currentData(),
+            pdf_output_format=self.transcript_format_combo.currentData() or "markdown_image",
             transcript_preserve_level=self.preserve_combo.currentData(),
             transcript_output_format=self.transcript_format_combo.currentData(),
             transcript_keep_timestamps=self.keep_timestamps_checkbox.isChecked(),

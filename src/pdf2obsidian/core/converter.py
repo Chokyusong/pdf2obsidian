@@ -10,6 +10,7 @@ from pdf2obsidian.core.markdown_writer import (
     write_image_markdown,
     write_pdf_markdown,
 )
+from pdf2obsidian.core.pdf_compressor import compress_pdf_to_webp_pdf
 from pdf2obsidian.core.pdf_processor import process_pdf
 from pdf2obsidian.core.transcript_processor import read_transcript
 from pdf2obsidian.utils.paths import (
@@ -32,6 +33,7 @@ class ConversionOptions:
     ocr_enabled: bool = False
     include_page_separator: bool = True
     mode: str = "auto"
+    pdf_output_format: str = "markdown_image"
     transcript_preserve_level: str = "medium"
     transcript_output_format: str = "study_note"
     transcript_keep_timestamps: bool = True
@@ -72,6 +74,21 @@ def convert_file(
     if is_pdf(source):
         if options.mode == "lecture":
             raise ValueError("PDF files cannot be converted in lecture transcript mode.")
+
+        if options.pdf_output_format == "webp_compression":
+            emit(f"Compressing PDF: {source.name}")
+            compression_result = compress_pdf_to_webp_pdf(
+                source,
+                item_dir,
+                quality=options.image_quality,
+            )
+            return ConversionResult(
+                source,
+                item_dir,
+                compression_result.output_path,
+                "pdf_compression",
+            )
+
         emit(f"Processing PDF: {source.name}")
         pdf_assets_dir = item_dir / "Files" / title
         pdf_assets_dir.mkdir(parents=True, exist_ok=True)

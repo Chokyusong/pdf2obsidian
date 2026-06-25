@@ -88,6 +88,25 @@ type: "image-import"
 Optional OCR text appears here when local OCR is enabled.
 ```
 
+## PDF Compression
+
+Input:
+
+```text
+sample.pdf
+```
+
+Output:
+
+```text
+output/
+└─ sample/
+   ├─ sample-compressed.pdf
+   └─ sample-compression-report.md
+```
+
+The compressed PDF output rasterizes pages and rebuilds a smaller PDF. It is intended for file-size reduction, not editable Markdown.
+
 ## Lecture Transcript Import
 
 Input:
