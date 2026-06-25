@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.2 - 2026-06-26
+
 ### Added
 
 - PDF compression output mode with compression report.
