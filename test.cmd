@@ -33,6 +33,9 @@ goto finish_error
 
 :run_app
 echo.
+call :ensure_import PySide6
+if errorlevel 1 goto dependency_error
+
 echo [INFO] Running PDF2Obsidian GUI...
 set "PYTHONPATH=%CD%\src;%PYTHONPATH%"
 %PYTHON_CMD% -m pdf2obsidian.main
@@ -41,9 +44,9 @@ goto finish_ok
 
 :run_checks
 echo.
-call :ensure_module pytest
+call :ensure_import pytest
 if errorlevel 1 goto dependency_error
-call :ensure_module ruff
+call :ensure_import ruff
 if errorlevel 1 goto dependency_error
 
 echo [INFO] Running pytest...
@@ -62,7 +65,7 @@ goto finish_ok
 echo.
 echo [ERROR] Command failed.
 echo If dependencies are missing, run:
-echo %PYTHON_CMD% -m pip install -r requirements.txt
+echo %PYTHON_CMD% -m pip install -r "%CD%\requirements.txt"
 goto finish_error
 
 :finish_ok
@@ -116,34 +119,34 @@ if exist "C:\Program Files\Python312\python.exe" (
 
 exit /b 0
 
-:ensure_module
-%PYTHON_CMD% -m %~1 --version >nul 2>nul
+:ensure_import
+%PYTHON_CMD% -c "import %~1" >nul 2>nul
 if not errorlevel 1 exit /b 0
 
 set "OLD_PYTHON_CMD=%PYTHON_CMD%"
 set "PYTHON_CMD="
 
-call :find_python_with_module %~1
+call :find_python_with_import %~1
 if defined PYTHON_CMD exit /b 0
 
 set "PYTHON_CMD=%OLD_PYTHON_CMD%"
 exit /b 1
 
-:find_python_with_module
-py -3 -m %~1 --version >nul 2>nul
+:find_python_with_import
+py -3 -c "import %~1" >nul 2>nul
 if not errorlevel 1 (
     set "PYTHON_CMD=py -3"
     exit /b 0
 )
 
-python -m %~1 --version >nul 2>nul
+python -c "import %~1" >nul 2>nul
 if not errorlevel 1 (
     set "PYTHON_CMD=python"
     exit /b 0
 )
 
 if exist "%LocalAppData%\Programs\Python\Python312\python.exe" (
-    "%LocalAppData%\Programs\Python\Python312\python.exe" -m %~1 --version >nul 2>nul
+    "%LocalAppData%\Programs\Python\Python312\python.exe" -c "import %~1" >nul 2>nul
     if not errorlevel 1 (
         set "PYTHON_CMD="%LocalAppData%\Programs\Python\Python312\python.exe""
         exit /b 0
@@ -151,7 +154,7 @@ if exist "%LocalAppData%\Programs\Python\Python312\python.exe" (
 )
 
 if exist "C:\Program Files\Python312\python.exe" (
-    "C:\Program Files\Python312\python.exe" -m %~1 --version >nul 2>nul
+    "C:\Program Files\Python312\python.exe" -c "import %~1" >nul 2>nul
     if not errorlevel 1 (
         set "PYTHON_CMD="C:\Program Files\Python312\python.exe""
         exit /b 0
