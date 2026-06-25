@@ -46,7 +46,12 @@ TRANSLATIONS = {
         "output": "Output",
         "format_detailed": "Detailed lecture note",
         "format_clean": "Clean transcript",
+        "format_study_note": "Study note",
+        "format_ebook_draft": "Ebook draft",
+        "format_obsidian_moc": "Obsidian MOC",
         "keep_timestamps": "Keep timestamps",
+        "review_questions": "Generate review questions",
+        "checklist": "Generate checklist",
         "log": "Log",
         "start": "Start conversion",
         "open_output": "Open output folder",
@@ -86,7 +91,12 @@ TRANSLATIONS = {
         "output": "출력 형식",
         "format_detailed": "상세 강의 노트",
         "format_clean": "정리된 자막",
+        "format_study_note": "학습 노트",
+        "format_ebook_draft": "전자책 원고",
+        "format_obsidian_moc": "Obsidian MOC",
         "keep_timestamps": "타임스탬프 유지",
+        "review_questions": "복습 질문 생성",
+        "checklist": "체크리스트 생성",
         "log": "로그",
         "start": "변환 시작",
         "open_output": "출력 폴더 열기",
@@ -201,6 +211,10 @@ class MainWindow(QMainWindow):
 
         self.keep_timestamps_checkbox = QCheckBox()
         self.keep_timestamps_checkbox.setChecked(True)
+        self.review_questions_checkbox = QCheckBox()
+        self.review_questions_checkbox.setChecked(True)
+        self.checklist_checkbox = QCheckBox()
+        self.checklist_checkbox.setChecked(True)
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
@@ -260,6 +274,8 @@ class MainWindow(QMainWindow):
 
         transcript_checks = QHBoxLayout()
         transcript_checks.addWidget(self.keep_timestamps_checkbox)
+        transcript_checks.addWidget(self.review_questions_checkbox)
+        transcript_checks.addWidget(self.checklist_checkbox)
 
         self.start_button = QPushButton()
         self.start_button.clicked.connect(self.start_conversion)
@@ -315,7 +331,7 @@ class MainWindow(QMainWindow):
 
         mode_value = self.mode_combo.currentData() or "auto"
         preserve_value = self.preserve_combo.currentData() or "high"
-        format_value = self.transcript_format_combo.currentData() or "detailed_lecture_note"
+        format_value = self.transcript_format_combo.currentData() or "study_note"
 
         self.setWindowTitle(self.tr("window_title"))
         self.file_list.setToolTip(self.tr("drop_tooltip"))
@@ -333,6 +349,8 @@ class MainWindow(QMainWindow):
         self.transcript_preserve_label.setText(self.tr("transcript_preserve"))
         self.transcript_output_label.setText(self.tr("output"))
         self.keep_timestamps_checkbox.setText(self.tr("keep_timestamps"))
+        self.review_questions_checkbox.setText(self.tr("review_questions"))
+        self.checklist_checkbox.setText(self.tr("checklist"))
         self.log_label.setText(self.tr("log"))
         self.start_button.setText(self.tr("start"))
         self.open_output_button.setText(self.tr("open_output"))
@@ -358,8 +376,9 @@ class MainWindow(QMainWindow):
         self._reset_combo_items(
             self.transcript_format_combo,
             [
-                (self.tr("format_detailed"), "detailed_lecture_note"),
-                (self.tr("format_clean"), "clean_transcript"),
+                (self.tr("format_study_note"), "study_note"),
+                (self.tr("format_ebook_draft"), "ebook_draft"),
+                (self.tr("format_obsidian_moc"), "obsidian_moc"),
             ],
             format_value,
         )
@@ -417,8 +436,8 @@ class MainWindow(QMainWindow):
             transcript_preserve_level=self.preserve_combo.currentData(),
             transcript_output_format=self.transcript_format_combo.currentData(),
             transcript_keep_timestamps=self.keep_timestamps_checkbox.isChecked(),
-            transcript_review_questions=False,
-            transcript_checklist=False,
+            transcript_review_questions=self.review_questions_checkbox.isChecked(),
+            transcript_checklist=self.checklist_checkbox.isChecked(),
         )
 
         self.progress_bar.setValue(0)

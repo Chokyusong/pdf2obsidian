@@ -7,6 +7,41 @@ from pathlib import Path
 
 from pdf2obsidian.core.transcript_processor import TranscriptBlock
 
+OUTPUT_TYPES = {
+    "study_note": "lecture-study-note",
+    "ebook_draft": "lecture-ebook-draft",
+    "obsidian_moc": "obsidian-moc",
+}
+
+STOPWORDS = {
+    "this",
+    "that",
+    "with",
+    "from",
+    "have",
+    "will",
+    "your",
+    "그리고",
+    "그래서",
+    "하지만",
+    "입니다",
+    "있는",
+    "없는",
+    "하면",
+    "이번",
+    "강의",
+    "여러분",
+    "바로",
+    "있습니다",
+    "있겠죠",
+    "오늘",
+    "내용",
+}
+
+EXAMPLE_TERMS = ["예를", "예시", "사례", "예제로", "예컨대", "예시로"]
+ACTION_TERMS = ["먼저", "다음", "단계", "방법", "실행", "설정", "클릭", "입력", "작성", "만들"]
+CAUTION_TERMS = ["주의", "실수", "문제", "중요", "반드시", "하지 마", "안 됩니다", "위험"]
+
 
 def _yaml_value(value: str) -> str:
     return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
@@ -19,69 +54,21 @@ def _sentences(text: str) -> list[str]:
 
 def _keyword_candidates(text: str, limit: int = 8) -> list[str]:
     words = re.findall(r"[A-Za-z][A-Za-z0-9_-]{3,}|[가-힣]{2,}", text)
-    stopwords = {
-        "this",
-        "that",
-        "with",
-        "from",
-        "have",
-        "will",
-        "your",
-        "그리고",
-        "그래서",
-        "하지만",
-        "입니다",
-        "있는",
-        "없는",
-        "하면",
-        "이번",
-        "강의",
-        "여러분",
-        "바로",
-        "있습니다",
-        "있겠죠",
-    }
-    counter = Counter(word for word in words if word.lower() not in stopwords)
+    counter = Counter(word for word in words if word.lower() not in STOPWORDS)
     return [word for word, _ in counter.most_common(limit)]
 
 
 def _derive_title(fallback_title: str, text: str) -> str:
-    if "자동 수익" in text:
-        return "자동 수익이 중요한 이유"
-    if "노동 수익" in text:
-        return "노동 수익과 자동 수익"
-
     sentences = _sentences(text)
     if not sentences:
         return fallback_title
-
     first = re.sub(r"^(안녕하세요|여러분|오늘은)\s*", "", sentences[0])
     return first[:45].strip(" .") or fallback_title
 
 
-def _select_sentences(text: str, terms: list[str], limit: int = 4) -> list[str]:
-    selected: list[str] = []
-    for sentence in _sentences(text):
-        if any(term in sentence for term in terms):
-            selected.append(sentence)
-        if len(selected) >= limit:
-            break
-    return selected
-
-
-def _paragraph(lines: list[str], fallback: str) -> str:
-    if not lines:
-        return fallback
-    return "\n\n".join(lines)
-
-
-def _has_any(text: str, terms: list[str]) -> bool:
-    return any(term in text for term in terms)
-
-
 def _chunk_blocks(
     blocks: list[TranscriptBlock],
-    target_chars: int = 1400,
+    target_chars: int,
 ) -> list[list[TranscriptBlock]]:
     chunks: list[list[TranscriptBlock]] = []
     current: list[TranscriptBlock] = []
@@ -101,154 +88,177 @@ def _chunk_blocks(
     return chunks
 
 
-def _chunk_text(chunk: list[TranscriptBlock]) -> str:
-    return " ".join(block.text for block in chunk).strip()
+def _chunk_text(chunk: list[TranscriptBlock], preserve_level: str) -> str:
+    text = " ".join(block.text for block in chunk).strip()
+    sentences = _sentences(text)
+
+    if preserve_level == "low":
+        return " ".join(sentences[:5]) if sentences else text
+    if preserve_level == "high":
+        return "\n\n".join(block.text for block in chunk if block.text)
+    return " ".join(sentences) if sentences else text
 
 
-def _write_auto_income_note(lines: list[str], full_text: str) -> None:
-    lines.extend(
-        [
-            "## 한 문장 핵심",
-            "",
-            "노동 수익만으로는 장기적인 자유를 얻기 어렵기 때문에 반복적으로 수익을 "
-            "창출하는 디지털 자산을 구축해야 한다.",
-            "",
-            "## 왜 자동 수익이 필요한가",
-            "",
-            _paragraph(
-                _select_sentences(full_text, ["왜", "평생", "은퇴", "한계", "미래"], limit=4),
-                "시간을 투입해야만 수익이 발생하는 구조에서는 일을 멈추면 수익도 멈춘다.",
-            ),
-            "",
-            "## 노동 수익",
-            "",
-            "- 직장인의 월급",
-            "- 프리랜서",
-            "- 과외",
-            "- 시급제 업무",
-            "",
-            "### 특징",
-            "",
-            "- 일을 멈추면 수익도 멈춘다.",
-            "- 시간과 수익이 직접 연결된다.",
-            "",
-            "## 자동 수익",
-            "",
-            "- 전자책",
-            "- 온라인 강의",
-            "- 디지털 템플릿",
-            "- 소프트웨어",
-            "- AI 자동화 서비스",
-            "",
-            "### 특징",
-            "",
-            "- 자산이 반복적으로 수익을 만든다.",
-            "- 잠을 자거나 쉬는 동안에도 판매 구조가 작동할 수 있다.",
-            "",
-            "## 자동 수익이 주는 자유",
-            "",
-            "1. 시간의 자유",
-            "2. 공간의 자유",
-            "3. 경제적 자유",
-            "4. 선택의 자유",
-            "",
-            "## 복리 효과",
-            "",
-        ]
-    )
-
-    compound_lines = _select_sentences(full_text, ["복리", "1년", "2년", "3년", "가치"], limit=4)
-    lines.extend(
-        [
-            _paragraph(
-                compound_lines,
-                "새로운 자산이 추가될수록 기존 수익에 새로운 수익이 더해진다.",
-            ),
-            "",
-            "## 실행 체크리스트",
-            "",
-            "- 자신의 경험을 정리한다.",
-            "- 첫 디지털 자산을 만든다.",
-            "- 반복 판매 구조를 구축한다.",
-            "- 지속적으로 자산을 추가한다.",
-            "",
-            "## 핵심 정리",
-            "",
-            "- 노동 수익은 시간을 돈으로 바꾸는 구조이다.",
-            "- 자동 수익은 자산이 돈을 벌어주는 구조이다.",
-            "- 목표는 돈보다 시간과 선택의 자유를 확보하는 것이다.",
-        ]
-    )
+def _timestamp_heading(chunk: list[TranscriptBlock], keep_timestamps: bool, index: int) -> str:
+    if keep_timestamps and chunk and chunk[0].start:
+        start = chunk[0].start
+        end = chunk[-1].end
+        return f"### {start} - {end}" if end else f"### {start}"
+    return f"### Part {index}"
 
 
-def _write_generic_note(
-    lines: list[str],
+def _filter_sentences(text: str, terms: list[str], limit: int = 8) -> list[str]:
+    matched: list[str] = []
+    for sentence in _sentences(text):
+        if any(term in sentence for term in terms):
+            matched.append(sentence)
+        if len(matched) >= limit:
+            break
+    return matched
+
+
+def _frontmatter(
+    title: str,
+    source_file: str,
+    doc_type: str,
+    output_format: str,
+    created: date | None,
+) -> list[str]:
+    created_date = created or date.today()
+    return [
+        "---",
+        f"title: {_yaml_value(title)}",
+        f"source_file: {_yaml_value(source_file)}",
+        f'created: "{created_date.isoformat()}"',
+        f"type: {_yaml_value(doc_type)}",
+        f"output_format: {_yaml_value(output_format)}",
+        "---",
+        "",
+        f"# {title}",
+        "",
+    ]
+
+
+def _write_section(lines: list[str], heading: str, body: list[str] | str) -> None:
+    if isinstance(body, str):
+        body_lines = [body] if body.strip() else []
+    else:
+        body_lines = [line for line in body if line.strip()]
+
+    if not body_lines:
+        return
+
+    lines.extend([heading, ""])
+    lines.extend(body_lines)
+    lines.append("")
+
+
+def _study_note(
+    title: str,
+    source_file: str,
+    blocks: list[TranscriptBlock],
     full_text: str,
     keywords: list[str],
-    blocks: list[TranscriptBlock],
-) -> None:
-    topic = keywords[0] if keywords else "핵심 주제"
-    selected = _select_sentences(full_text, keywords[:5], limit=8)
+    preserve_level: str,
+    keep_timestamps: bool,
+    include_review_questions: bool,
+    include_checklist: bool,
+    created: date | None,
+) -> list[str]:
+    lines = _frontmatter(title, source_file, OUTPUT_TYPES["study_note"], "study_note", created)
+    overview = _sentences(full_text)[:3]
+    _write_section(lines, "## 강의 개요", [f"- {sentence}" for sentence in overview])
 
-    lines.extend(
-        [
-            "## 1. 한 문장 핵심",
-            "",
-            _paragraph(selected[:1], f"이 자료는 {topic}에 대한 핵심 내용을 다룬다."),
-            "",
-            "## 2. 강의 전체 요약",
-            "",
-            _paragraph(
-                selected[1:6],
-                "자막의 반복 표현을 제거하고 강의 흐름을 보존해 학습 자료로 정리했습니다.",
-            ),
-            "",
-            "## 3. 핵심 개념",
-            "",
-        ]
-    )
-
+    concept_lines = []
     for keyword in keywords[:6]:
-        lines.append(f"- **{keyword}**: 강의에서 반복적으로 등장하는 핵심 키워드입니다.")
+        related = _filter_sentences(full_text, [keyword], limit=1)
+        if related:
+            concept_lines.append(f"- **{keyword}**: {related[0]}")
+        else:
+            concept_lines.append(f"- **{keyword}**")
+    _write_section(lines, "## 핵심 개념", concept_lines)
 
-    lines.extend(["", "## 4. 강의 흐름별 상세 정리", ""])
-    for index, chunk in enumerate(_chunk_blocks(blocks), start=1):
-        start = chunk[0].start if chunk and chunk[0].start else f"Part {index}"
-        chunk_sentences = _sentences(_chunk_text(chunk))
-        detail = " ".join(chunk_sentences) if chunk_sentences else _chunk_text(chunk)
-        lines.extend([f"### {start} - Part {index}", "", detail, ""])
+    chunks = _chunk_blocks(blocks, target_chars=900 if preserve_level == "low" else 1400)
+    if chunks:
+        lines.extend(["## 강의 흐름", ""])
+        for index, chunk in enumerate(chunks, start=1):
+            lines.extend(
+                [
+                    _timestamp_heading(chunk, keep_timestamps, index),
+                    "",
+                    _chunk_text(chunk, preserve_level),
+                    "",
+                ]
+            )
 
-    lines.extend(["## 5. 예시와 실행 포인트", ""])
-    example_sentences = _select_sentences(
-        full_text,
-        ["예를", "예시", "방법", "단계", "먼저", "다음", "해야", "하면"],
-        limit=8,
-    )
-    lines.append(
-        _paragraph(
-            example_sentences,
-            "자막에서 명확한 예시나 실행 단계가 드러나지 않으면, "
-            "상세 정리에서 행동으로 옮길 문장을 표시해 사용합니다.",
-        )
-    )
+    _write_section(lines, "## 예시 및 설명", _filter_sentences(full_text, EXAMPLE_TERMS))
+    action_sentences = _filter_sentences(full_text, ACTION_TERMS)
+    _write_section(lines, "## 실습 또는 실행 단계", action_sentences)
+    _write_section(lines, "## 주의사항", _filter_sentences(full_text, CAUTION_TERMS))
 
-    lines.extend(["", "## 6. 주의할 부분", ""])
-    caution_sentences = _select_sentences(
-        full_text,
-        ["주의", "실수", "문제", "하지", "안 됩니다", "중요", "반드시"],
-        limit=6,
-    )
-    lines.append(
-        _paragraph(
-            caution_sentences,
-            "강의에서 강조한 조건, 전제, 예외가 있다면 원문 자막과 함께 확인합니다.",
-        )
-    )
+    if include_review_questions and keywords:
+        questions = [
+            f"{index}. {keyword}의 의미를 원문 내용 기준으로 설명할 수 있는가?"
+            for index, keyword in enumerate(keywords[:5], start=1)
+        ]
+        _write_section(lines, "## 복습 질문", questions)
 
-    lines.extend(["", "## 7. 최종 정리", ""])
-    final_sentences = selected[-4:] or _sentences(full_text)[-4:]
-    for sentence in final_sentences:
-        lines.append(f"- {sentence}")
+    if include_checklist and action_sentences:
+        checklist = [f"- [ ] {sentence}" for sentence in action_sentences[:6]]
+        _write_section(lines, "## 실행 체크리스트", checklist)
+
+    return lines
+
+
+def _ebook_draft(
+    title: str,
+    source_file: str,
+    blocks: list[TranscriptBlock],
+    preserve_level: str,
+    keep_timestamps: bool,
+    created: date | None,
+) -> list[str]:
+    lines = _frontmatter(title, source_file, OUTPUT_TYPES["ebook_draft"], "ebook_draft", created)
+    lines.extend(["## 원고 초안", ""])
+
+    chunks = _chunk_blocks(blocks, target_chars=1200 if preserve_level != "high" else 1800)
+    for index, chunk in enumerate(chunks, start=1):
+        if keep_timestamps:
+            lines.extend([_timestamp_heading(chunk, True, index), ""])
+        elif len(chunks) > 1:
+            lines.extend([f"## Part {index}", ""])
+        lines.extend([_chunk_text(chunk, preserve_level), ""])
+
+    return lines
+
+
+def _obsidian_moc(
+    title: str,
+    source_file: str,
+    blocks: list[TranscriptBlock],
+    full_text: str,
+    keywords: list[str],
+    keep_timestamps: bool,
+    created: date | None,
+) -> list[str]:
+    lines = _frontmatter(title, source_file, OUTPUT_TYPES["obsidian_moc"], "obsidian_moc", created)
+
+    _write_section(lines, "## 주요 주제", [f"- {keyword}" for keyword in keywords[:8]])
+
+    chunks = _chunk_blocks(blocks, target_chars=1400)
+    if chunks:
+        lines.extend(["## 문서 내 Heading 후보", ""])
+        for index, chunk in enumerate(chunks, start=1):
+            heading = _timestamp_heading(chunk, keep_timestamps, index)
+            lines.append(f"- {heading.replace('### ', '')}")
+        lines.append("")
+
+    _write_section(lines, "## 노트 후보", [f"- {keyword}" for keyword in keywords[:8]])
+    _write_section(lines, "## 관련 키워드 후보", [f"- {keyword}" for keyword in keywords])
+
+    summary = _sentences(full_text)[:5]
+    _write_section(lines, "## 원문 기반 요약 단서", [f"- {sentence}" for sentence in summary])
+    return lines
 
 
 def write_lecture_note(
@@ -263,31 +273,44 @@ def write_lecture_note(
     include_checklist: bool = True,
     created: date | None = None,
 ) -> Path:
-    del preserve_level, keep_timestamps, include_review_questions, include_checklist
-
     path = Path(markdown_path)
-    created_date = created or date.today()
     full_text = " ".join(block.text for block in blocks)
     keywords = _keyword_candidates(full_text)
     note_title = _derive_title(title, full_text)
+    selected_format = output_format if output_format in OUTPUT_TYPES else "study_note"
 
-    lines = [
-        "---",
-        f"title: {_yaml_value(note_title)}",
-        f"source_file: {_yaml_value(source_file)}",
-        f'created: "{created_date.isoformat()}"',
-        'type: "lecture-transcript"',
-        f"output_format: {_yaml_value(output_format)}",
-        "---",
-        "",
-        f"# {note_title}",
-        "",
-    ]
-
-    if _has_any(full_text, ["자동 수익", "노동 수익", "디지털 자산", "전자책"]):
-        _write_auto_income_note(lines, full_text)
+    if selected_format == "ebook_draft":
+        lines = _ebook_draft(
+            note_title,
+            source_file,
+            blocks,
+            preserve_level,
+            keep_timestamps,
+            created,
+        )
+    elif selected_format == "obsidian_moc":
+        lines = _obsidian_moc(
+            note_title,
+            source_file,
+            blocks,
+            full_text,
+            keywords,
+            keep_timestamps,
+            created,
+        )
     else:
-        _write_generic_note(lines, full_text, keywords, blocks)
+        lines = _study_note(
+            note_title,
+            source_file,
+            blocks,
+            full_text,
+            keywords,
+            preserve_level,
+            keep_timestamps,
+            include_review_questions,
+            include_checklist,
+            created,
+        )
 
     path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
     return path
