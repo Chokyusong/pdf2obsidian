@@ -8,7 +8,7 @@ from io import BytesIO, StringIO
 from pathlib import Path
 
 import fitz
-from PIL import Image
+from PIL import Image, ImageStat
 
 from pdf2obsidian.core import ocr
 
@@ -267,7 +267,7 @@ def _render_structured_lines(lines: list[_TextLine]) -> str:
 
     def flush_paragraph() -> None:
         if paragraph:
-            blocks.append("  \n".join(part.strip() for part in paragraph if part.strip()))
+            blocks.append("\n\n".join(part.strip() for part in paragraph if part.strip()))
             paragraph.clear()
 
     for line in lines:
@@ -446,12 +446,27 @@ def _should_keep_image(width: int, height: int) -> bool:
     return True
 
 
+def _is_low_information_image(image: Image.Image) -> bool:
+    rgb = image.convert("RGB")
+    extrema = rgb.getextrema()
+    max_channel_range = max(high - low for low, high in extrema)
+    stat = ImageStat.Stat(rgb)
+    average_stddev = sum(stat.stddev) / len(stat.stddev)
+
+    if max_channel_range <= 5 and average_stddev <= 2:
+        return True
+
+    sample = rgb.resize((64, 64))
+    colors = sample.getcolors(maxcolors=4096)
+    return colors is not None and len(colors) <= 3 and average_stddev <= 5
+
+
 def _save_pdf_image(
     document: fitz.Document,
     xref: int,
     output_path: Path,
     quality: int,
-) -> tuple[int, int]:
+) -> tuple[int, int] | None:
     pixmap = fitz.Pixmap(document, xref)
     try:
         if pixmap.alpha or pixmap.colorspace is None or pixmap.n >= 5:
@@ -463,6 +478,8 @@ def _save_pdf_image(
     with Image.open(BytesIO(image_bytes)) as image:
         if image.mode not in {"RGB", "RGBA"}:
             image = image.convert("RGB")
+        if _is_low_information_image(image):
+            return None
         image.save(output_path, "WEBP", quality=quality, method=6)
         return image.width, image.height
 
@@ -497,7 +514,8 @@ def process_pdf(
             ocr_used = False
             images: list[PDFImageResult] = []
 
-            for image_index, image_info in enumerate(page.get_images(full=True), start=1):
+            kept_image_index = 0
+            for image_info in page.get_images(full=True):
                 xref = image_info[0]
                 width = int(image_info[2])
                 height = int(image_info[3])
@@ -509,9 +527,15 @@ def process_pdf(
                     images.append(saved_xrefs[xref])
                     continue
 
-                asset_name = f"p{page_index:03d}-img{image_index:02d}.webp"
+                kept_image_index += 1
+                asset_name = f"p{page_index:03d}-img{kept_image_index:02d}.webp"
                 output_path = assets / asset_name
-                saved_width, saved_height = _save_pdf_image(document, xref, output_path, quality)
+                saved_dimensions = _save_pdf_image(document, xref, output_path, quality)
+                if saved_dimensions is None:
+                    kept_image_index -= 1
+                    continue
+
+                saved_width, saved_height = saved_dimensions
                 image_result = PDFImageResult(
                     page_number=page_index,
                     asset_name=asset_name,

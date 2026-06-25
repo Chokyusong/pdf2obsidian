@@ -33,7 +33,7 @@ def test_write_pdf_markdown_uses_manage_pdf_profile(tmp_path):
     assert "![[Files/sample/page_001.webp]]" not in content
     assert "## Main Title" in content
     assert "**Important** paragraph text." in content
-    assert "Visual line one  \nVisual line two" in content
+    assert "Visual line one\n\nVisual line two" in content
     assert "| Step | Asset |" in content
     assert "![[Files/sample/p001-img01.webp]]" in content
     assert "Conversion profile: manage-pdf-in-obsidian" in content
@@ -118,7 +118,7 @@ def _pdf_result(
     text: str = (
         "## Main Title\n\n"
         "**Important** paragraph text.\n\n"
-        "Visual line one  \nVisual line two\n\n"
+        "Visual line one\n\nVisual line two\n\n"
         "- Keep this list item"
     ),
     tables: list[SimpleNamespace] | None = None,

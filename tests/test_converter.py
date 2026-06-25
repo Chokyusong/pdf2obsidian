@@ -3,14 +3,19 @@ from __future__ import annotations
 from io import BytesIO
 
 import fitz
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from pdf2obsidian.core.converter import ConversionOptions, convert_file
 
 
 def _sample_png_bytes() -> bytes:
     buffer = BytesIO()
-    Image.new("RGB", (240, 180), color=(40, 120, 200)).save(buffer, format="PNG")
+    image = Image.new("RGB", (240, 180), color=(40, 120, 200))
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((20, 20, 220, 80), fill=(20, 20, 40))
+    draw.rectangle((40, 105, 180, 150), fill=(240, 120, 40))
+    draw.text((52, 118), "PDF IMAGE", fill=(255, 255, 255))
+    image.save(buffer, format="PNG")
     return buffer.getvalue()
 
 
