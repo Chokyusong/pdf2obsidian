@@ -12,3 +12,4 @@ output/
 .DS_Store
 *.egg-info/
 private/
+docs/prompts/
