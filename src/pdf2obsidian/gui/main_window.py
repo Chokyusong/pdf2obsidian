@@ -38,9 +38,9 @@ TRANSLATIONS = {
         "mode_auto": "Auto detect",
         "quality": "Quality",
         "pdf_import_mode": "PDF Import Mode",
-        "pdf_text_markdown": "Text Markdown",
-        "pdf_page_image_markdown": "Page Image Markdown",
-        "pdf_text_page_image_markdown": "Text + Page Image Markdown",
+        "pdf_structured_markdown": "Structured Markdown",
+        "pdf_raw_text_markdown": "Raw Text Markdown",
+        "pdf_page_image_markdown": "Page Image Markdown (Fallback)",
         "ocr": "Use OCR when available",
         "separator": "Insert page separators",
         "transcript_preserve": "Transcript detail",
@@ -87,9 +87,9 @@ TRANSLATIONS = {
         "mode_auto": "자동 판별",
         "quality": "이미지 품질",
         "pdf_import_mode": "PDF 가져오기 모드",
-        "pdf_text_markdown": "Text Markdown",
-        "pdf_page_image_markdown": "Page Image Markdown",
-        "pdf_text_page_image_markdown": "Text + Page Image Markdown",
+        "pdf_structured_markdown": "Structured Markdown",
+        "pdf_raw_text_markdown": "Raw Text Markdown",
+        "pdf_page_image_markdown": "Page Image Markdown (Fallback)",
         "ocr": "가능하면 OCR 사용",
         "separator": "페이지 구분선 삽입",
         "transcript_preserve": "자막 상세도",
@@ -347,7 +347,7 @@ class MainWindow(QMainWindow):
 
         mode_value = self.mode_combo.currentData() or "auto"
         pdf_import_mode_value = (
-            self.pdf_import_mode_combo.currentData() or "text_page_image_markdown"
+            self.pdf_import_mode_combo.currentData() or "structured_markdown"
         )
         preserve_value = self.preserve_combo.currentData() or "high"
         format_value = self.transcript_format_combo.currentData() or "study_note"
@@ -396,9 +396,9 @@ class MainWindow(QMainWindow):
         self._reset_combo_items(
             self.pdf_import_mode_combo,
             [
-                (self.tr("pdf_text_markdown"), "text_markdown"),
+                (self.tr("pdf_structured_markdown"), "structured_markdown"),
+                (self.tr("pdf_raw_text_markdown"), "raw_text_markdown"),
                 (self.tr("pdf_page_image_markdown"), "page_image_markdown"),
-                (self.tr("pdf_text_page_image_markdown"), "text_page_image_markdown"),
             ],
             pdf_import_mode_value,
         )

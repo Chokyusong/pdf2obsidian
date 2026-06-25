@@ -17,7 +17,7 @@ It is designed for Windows users who want to keep their files on their own compu
 PDF2Obsidian helps students, researchers, and knowledge workers turn static learning material into reusable Obsidian notes. The first MVP focuses on reliable local conversion instead of cloud automation:
 
 - PDF text layers become lightweight Markdown.
-- PDF pages become visual WebP previews for layout fidelity.
+- PDF structure is restored as editable Markdown where practical.
 - Embedded PDF images become compressed WebP assets.
 - Images become compressed WebP assets plus Markdown.
 - Lecture subtitles become structured study notes.
@@ -34,7 +34,7 @@ The default workflow should stay different from cloud AI products. PDF2Obsidian 
 
 Target capabilities:
 
-- PDF conversion: page-level WebP previews, layout-aware text extraction, embedded image extraction, and Obsidian Markdown output.
+- PDF conversion: layout-aware text extraction, heading/list/table restoration, embedded image extraction, fallback page images, and Obsidian Markdown output.
 - Subtitle conversion: SRT/VTT/TXT/MD parsing, repeated speech cleanup, lecture-flow preservation, concept explanation, examples, procedures, cautions, and final summary.
 - YouTube subtitle workflow: import downloaded YouTube subtitles first; direct URL support can be added later.
 - Output: Markdown folder with assets, ready to move into an Obsidian vault.
@@ -52,10 +52,10 @@ Many PDF notes, lecture images, and subtitles are difficult to reuse in Obsidian
 
 - Convert PDF files to Markdown.
 - Extract PDF page text with PyMuPDF.
-- Render PDF pages as WebP previews.
+- Infer simple headings, bold text, lists, and paragraphs from PDF text blocks.
 - Convert detected PDF tables into Markdown tables.
 - Extract embedded PDF images as compressed WebP assets.
-- Choose PDF import mode: Text Markdown, Page Image Markdown, or Text + Page Image Markdown.
+- Choose PDF import mode: Structured Markdown, Raw Text Markdown, or Page Image Markdown fallback.
 - Convert PNG, JPG, JPEG, and WebP images to compressed WebP.
 - Optional OCR wrapper with EasyOCR first and Tesseract fallback.
 - Convert SRT, VTT, TXT, and MD lecture transcripts into structured learning notes.
@@ -112,8 +112,8 @@ output/
 └─ sample/
    ├─ sample.md
    └─ assets/
-      ├─ page_001.webp
-      └─ image_p001_001.webp
+      ├─ image_p001_001.webp
+      └─ table_p002_001.webp
 ```
 
 Markdown example:
@@ -128,15 +128,19 @@ type: "pdf-import"
 
 # sample
 
-## Page 1
+<p align="center"><sub>PDF 1페이지</sub></p>
 
-![[assets/page_001.webp]]
+## Main heading
 
-### Extracted text
+Paragraph text...
 
-Extracted text...
+##### Table 1
 
-### Extracted image image_p001_001.webp
+| Item | Action |
+| --- | --- |
+| Example | Do this |
+
+##### Image 1
 
 ![[assets/image_p001_001.webp]]
 ```
@@ -145,11 +149,11 @@ For `lecture.vtt`, the app creates a study note with overview, concepts, timelin
 
 ## PDF Import Modes
 
-- `Text Markdown`: extracts searchable text and embedded PDF images.
-- `Page Image Markdown`: renders each PDF page as `page_001.webp`, `page_002.webp`, and inserts only page images.
-- `Text + Page Image Markdown`: inserts the page image first, then extracted text, then embedded images. This is the default mode.
+- `Structured Markdown`: default mode. Converts PDF content into editable Markdown with inferred headings, paragraphs, lists, Markdown tables, links, and necessary images.
+- `Raw Text Markdown`: keeps extracted PDF text close to the source text layer, while still preserving detected tables and embedded images.
+- `Page Image Markdown`: fallback mode for scanned or very complex PDFs. Renders each PDF page as `page_001.webp`, `page_002.webp`, and inserts only page images.
 
-When PyMuPDF can detect a table structure, PDF2Obsidian writes it as a Markdown table. Complex borderless tables may still require manual cleanup.
+When PyMuPDF can detect a simple table structure, PDF2Obsidian writes it as a Markdown table. Irregular tables can be saved as table-only WebP fallbacks instead of being forced into broken Markdown.
 
 ## Windows Notes
 

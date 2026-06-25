@@ -32,11 +32,11 @@ type: "pdf-import"
 
 # sample
 
-## Page 1
+<p align="center"><sub>PDF 1페이지</sub></p>
 
 Extracted PDF text appears here.
 
-<p align="center"><sub>PDF 1페이지 이미지</sub></p>
+##### Image 1
 
 ![[assets/image_p001_001.webp]]
 
@@ -44,10 +44,11 @@ Extracted PDF text appears here.
 
 - Source pages: 3
 - Extracted text characters: 12000
+- Markdown tables: 1
 - Extracted PDF images: 1
 - Verification: text layer extraction was attempted before OCR.
-- Verification: page images are not rendered by default.
-- Verification: only PDF-embedded images are saved.
+- Verification: page images are only inserted in Page Image Markdown fallback mode.
+- Verification: PDF-embedded images are extracted when large enough.
 ```
 
 ## Image Import

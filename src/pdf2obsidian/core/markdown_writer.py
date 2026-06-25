@@ -4,13 +4,17 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-PDF_IMPORT_TEXT = "text_markdown"
+PDF_IMPORT_STRUCTURED = "structured_markdown"
+PDF_IMPORT_RAW_TEXT = "raw_text_markdown"
 PDF_IMPORT_PAGE_IMAGE = "page_image_markdown"
-PDF_IMPORT_TEXT_PAGE_IMAGE = "text_page_image_markdown"
 PDF_IMPORT_MODES = {
-    PDF_IMPORT_TEXT,
+    PDF_IMPORT_STRUCTURED,
+    PDF_IMPORT_RAW_TEXT,
     PDF_IMPORT_PAGE_IMAGE,
-    PDF_IMPORT_TEXT_PAGE_IMAGE,
+}
+LEGACY_PDF_IMPORT_MODE_ALIASES = {
+    "text_markdown": PDF_IMPORT_RAW_TEXT,
+    "text_page_image_markdown": PDF_IMPORT_STRUCTURED,
 }
 
 
@@ -46,74 +50,116 @@ def _preserve_markdown_linebreaks(text: str) -> str:
     return "\n\n".join(part for part in rendered if part)
 
 
+def _selected_pdf_mode(pdf_import_mode: str) -> str:
+    mode = LEGACY_PDF_IMPORT_MODE_ALIASES.get(pdf_import_mode, pdf_import_mode)
+    return mode if mode in PDF_IMPORT_MODES else PDF_IMPORT_STRUCTURED
+
+
+def _page_label(page_number: int) -> str:
+    return f'<p align="center"><sub>PDF {page_number}페이지</sub></p>'
+
+
+def _write_tables(lines: list[str], page: Any) -> None:
+    for table_index, table in enumerate(page.tables, start=1):
+        lines.extend([f"##### Table {table_index}", ""])
+        if getattr(table, "markdown", None):
+            lines.extend([table.markdown, ""])
+        if getattr(table, "asset_name", None):
+            lines.extend([f"![[assets/{table.asset_name}]]", ""])
+        if getattr(table, "warning", None):
+            lines.extend([f"> Table note: {table.warning}", ""])
+
+
+def _write_images(lines: list[str], page: Any) -> None:
+    for image_index, image in enumerate(page.images, start=1):
+        lines.extend(
+            [
+                f"##### Image {image_index}",
+                "",
+                f"![[assets/{image.asset_name}]]",
+                "",
+            ]
+        )
+
+
+def _write_links(lines: list[str], page: Any) -> None:
+    links = getattr(page, "links", [])
+    if not links:
+        return
+
+    lines.extend(["##### Links", ""])
+    for link in links:
+        if getattr(link, "kind", "") == "uri":
+            lines.append(f"- [{link.label}]({link.target})")
+        else:
+            lines.append(f"- {link.label}: {link.target}")
+    lines.append("")
+
+
 def write_pdf_markdown(
     markdown_path: str | Path,
     title: str,
     source_file: str,
     pdf_result: Any,
     include_page_separator: bool = True,
-    pdf_import_mode: str = PDF_IMPORT_TEXT_PAGE_IMAGE,
+    pdf_import_mode: str = PDF_IMPORT_STRUCTURED,
     created: date | None = None,
 ) -> Path:
     path = Path(markdown_path)
-    selected_mode = (
-        pdf_import_mode if pdf_import_mode in PDF_IMPORT_MODES else PDF_IMPORT_TEXT_PAGE_IMAGE
-    )
+    selected_mode = _selected_pdf_mode(pdf_import_mode)
     lines = [_frontmatter(title, source_file, "pdf-import", created), f"# {title}", ""]
 
     for index, page in enumerate(pdf_result.pages):
         if include_page_separator and index > 0:
             lines.extend(["---", ""])
-        lines.extend(
-            [
-                f"## Page {page.page_number}",
-                "",
-            ]
-        )
 
-        if selected_mode in {PDF_IMPORT_PAGE_IMAGE, PDF_IMPORT_TEXT_PAGE_IMAGE}:
-            lines.extend([f"![[assets/{page.page_asset_name}]]", ""])
-
-        if selected_mode in {PDF_IMPORT_TEXT, PDF_IMPORT_TEXT_PAGE_IMAGE}:
-            for table_index, table in enumerate(page.tables, start=1):
-                lines.extend(
-                    [
-                        f"### Extracted table {table_index}",
-                        "",
-                        table.markdown,
-                        "",
-                    ]
-                )
-
-            if selected_mode == PDF_IMPORT_TEXT_PAGE_IMAGE:
-                lines.extend(["### Extracted text", ""])
-
+        if selected_mode == PDF_IMPORT_STRUCTURED:
+            lines.extend([_page_label(page.page_number), ""])
             if page.text:
-                lines.extend([_preserve_markdown_linebreaks(page.text), ""])
+                lines.extend([page.text, ""])
             else:
                 lines.extend(["> No extractable text was found on this page.", ""])
+            _write_tables(lines, page)
+            _write_images(lines, page)
+            _write_links(lines, page)
 
-        if selected_mode in {PDF_IMPORT_TEXT, PDF_IMPORT_TEXT_PAGE_IMAGE}:
-            for image in page.images:
+        elif selected_mode == PDF_IMPORT_RAW_TEXT:
+            lines.extend([f"## Page {page.page_number}", ""])
+            raw_text = getattr(page, "raw_text", page.text)
+            if raw_text:
+                lines.extend([_preserve_markdown_linebreaks(raw_text), ""])
+            else:
+                lines.extend(["> No extractable text was found on this page.", ""])
+            _write_tables(lines, page)
+            _write_images(lines, page)
+            _write_links(lines, page)
+
+        elif selected_mode == PDF_IMPORT_PAGE_IMAGE:
+            lines.extend([f"## Page {page.page_number}", ""])
+            if getattr(page, "page_asset_name", None):
+                lines.extend([f"![[assets/{page.page_asset_name}]]", ""])
+            else:
                 lines.extend(
-                    [
-                        f"### Extracted image {image.asset_name}",
-                        "",
-                        f"![[assets/{image.asset_name}]]",
-                        "",
-                    ]
+                    ["> Page image fallback was selected, but no page image was saved.", ""]
                 )
 
         if page.ocr_warning:
             lines.extend([f"> OCR note: {page.ocr_warning}", ""])
+        for warning in getattr(page, "warnings", []) or []:
+            lines.extend([f"> Conversion note: {warning}", ""])
 
     lines.extend(["---", "", "## Conversion Report", ""])
     lines.extend(
         [
             f"- Source pages: {pdf_result.page_count}",
             f"- Extracted text characters: {pdf_result.text_char_count}",
-            f"- Extracted PDF tables: {pdf_result.table_count}",
+            f"- Detected PDF tables: {pdf_result.table_count}",
+            f"- Markdown tables: {getattr(pdf_result, 'markdown_table_count', 0)}",
+            f"- Table image fallbacks: {getattr(pdf_result, 'table_image_count', 0)}",
             f"- Extracted PDF images: {pdf_result.image_count}",
+            f"- Extracted PDF links: {getattr(pdf_result, 'link_count', 0)}",
+            f"- OCR pages: {getattr(pdf_result, 'ocr_page_count', 0)}",
+            f"- Warnings: {getattr(pdf_result, 'warning_count', 0)}",
             f"- Original PDF size: {pdf_result.source_size_bytes:,} bytes",
             f"- Saved asset size: {pdf_result.asset_size_bytes:,} bytes",
             f"- PDF import mode: {selected_mode}",
@@ -125,8 +171,8 @@ def write_pdf_markdown(
     lines.extend(
         [
             "- Verification: text layer extraction was attempted before OCR.",
-            "- Verification: each PDF page is rendered to WebP for visual layout fidelity.",
-            "- Verification: PDF-embedded images are also extracted when large enough.",
+            "- Verification: page images are only inserted in Page Image Markdown fallback mode.",
+            "- Verification: PDF-embedded images are extracted when large enough.",
         ]
     )
 

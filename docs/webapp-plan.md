@@ -11,7 +11,7 @@ The desktop app is the first target, but the conversion logic is kept under `cor
 - Files are not sent to an external server.
 - Calls the same converter used by the desktop GUI.
 - Supports PDF, image, subtitle, Markdown, and text uploads.
-- Preserves PDF visual layout with page previews and layout-aware text extraction.
+- Converts PDF text structure into editable Markdown with fallback page previews only when needed.
 - Converts lecture or YouTube subtitles into detailed study notes.
 
 ### Phase 2: Hosted Website
@@ -44,7 +44,7 @@ The desktop app is the first target, but the conversion logic is kept under `cor
 In scope:
 
 - PDF to visual-layout-preserving Markdown.
-- PDF page WebP previews and embedded image extraction.
+- Structured PDF Markdown, fallback PDF page WebP previews, and embedded image extraction.
 - Lecture and YouTube subtitle files to detailed study notes.
 - Obsidian-ready Markdown output.
 
