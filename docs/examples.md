@@ -4,6 +4,139 @@ This page shows the intended output style for the first MVP. The application kee
 
 Private or paid learning materials must not be committed as examples. Sample files should be synthetic, public-domain, openly licensed, or explicitly redistributable.
 
+## Reproducible Demo Samples
+
+The repository includes two safe synthetic inputs that were generated for documentation:
+
+- `docs/samples/sample_course.pdf`
+- `docs/samples/sample_lecture.vtt`
+
+The selected demo conversion output is stored under:
+
+```text
+docs/demo-output/
+├─ sample_course.md
+├─ sample_lecture.md
+└─ assets/
+   └─ sample_course/
+      ├─ p001-img01.webp
+      ├─ p002-img01.webp
+      ├─ p003-img01.webp
+      ├─ p004-img01.webp
+      └─ p005-img01.webp
+```
+
+These files are synthetic samples only. They do not use real lecture names, real PDF titles, copied subtitle text, personal paths, or paid learning material.
+
+### PDF Before
+
+Input file:
+
+```text
+docs/samples/sample_course.pdf
+```
+
+Before conversion, the PDF contains:
+
+```text
+sample_course.pdf
+├─ Page 1: cover and synthetic diagram
+├─ Page 2: table of contents and synthetic diagram
+├─ Page 3: body section with bullets and synthetic diagram
+├─ Page 4: body section with one simple table, link, and synthetic diagram
+└─ Page 5: lecture note checklist and synthetic diagram
+```
+
+### PDF After
+
+Selected Markdown output:
+
+```text
+docs/demo-output/sample_course.md
+```
+
+Markdown excerpt:
+
+```markdown
+# sample_course
+
+<p align="center"><sub>PDF 4페이지</sub></p>
+
+## 2. PDF to Obsidian Markdown
+
+##### Table 1
+
+| Input | Expected Markdown result |
+| --- | --- |
+| PDF heading | ## or ### heading |
+| Simple table | Markdown table |
+| Embedded image | WebP asset reference |
+| Complex table | WebP fallback image |
+
+##### Image 1
+
+![[assets/sample_course/p004-img01.webp]]
+
+##### Links
+
+- [https://example.org/pdf2obsidian-sample](https://example.org/pdf2obsidian-sample)
+```
+
+In Obsidian, this appears as one editable Markdown note with page markers, headings, a Markdown table, rendered WebP images, and a conversion report at the bottom.
+
+### Lecture Transcript Before
+
+Input file:
+
+```text
+docs/samples/sample_lecture.vtt
+```
+
+Before conversion, the VTT contains about 100 timestamped cues:
+
+```text
+WEBVTT
+
+1
+00:00:00.000 --> 00:00:04.000
+Introduction: The Obsidian workflow starts with a local source file and a clear conversion goal.
+
+2
+00:00:04.000 --> 00:00:08.000
+Introduction: The Obsidian workflow starts with a local source file and a clear conversion goal.
+```
+
+The synthetic transcript flow covers introduction, key concepts, examples, practice, summary, review questions, and mission.
+
+### Lecture Transcript After
+
+Selected Markdown output:
+
+```text
+docs/demo-output/sample_lecture.md
+```
+
+Markdown excerpt:
+
+```markdown
+## 강의 개요
+
+- Introduction: The Obsidian workflow starts with a local source file and a clear conversion goal.
+
+## 핵심 개념
+
+- **conversion**: Introduction: The Obsidian workflow starts with a local source file and a clear conversion goal.
+- **Markdown**: Key concept: Markdown conversion creates editable notes, stable headings, and reusable wiki links.
+
+## 강의 흐름
+
+### 00:00:00 - 00:01:00
+
+Introduction: The Obsidian workflow starts with a local source file and a clear conversion goal.
+```
+
+In Obsidian, this appears as a study note with overview, key concepts, timestamped sections, review questions, and checklist content when action sentences are detected.
+
 ## PDF Import
 
 Input:

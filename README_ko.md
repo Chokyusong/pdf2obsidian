@@ -167,6 +167,64 @@ type: "pdf-import"
 
 기본 모드는 외부 AI API 없이 동작해야 합니다. 먼저 규칙 기반 구조화를 개선하고, 이후 Ollama 같은 로컬 LLM 지원을 선택 기능으로 검토할 수 있습니다. OpenAI API 지원은 향후 고려하더라도 필수 의존성이 아닌 선택적 향상 기능으로만 다룹니다.
 
+## 데모 변환 예시
+
+이 저장소에는 공개 문서용으로 재현 가능한 synthetic 데모 파일이 포함되어 있습니다. 실제 강의명, 유료 자료, 개인 파일 경로, 복사한 자막 원문은 포함하지 않습니다.
+
+![Synthetic sample PDF cover](docs/assets/sample-course-cover.png)
+
+데모 입력:
+
+- [sample_course.pdf](docs/samples/sample_course.pdf): 표지, 목차, 본문 섹션, 단순 표 1개, 체크리스트, 링크, synthetic 다이어그램 5개를 포함한 PDF입니다.
+- [sample_lecture.vtt](docs/samples/sample_lecture.vtt): 도입, 핵심 개념, 예시, 실습 안내, 정리, 복습 질문, 실행 미션 흐름을 가진 약 100개 타임라인 cue 자막입니다.
+
+### PDF to Obsidian Markdown
+
+샘플 PDF는 실제 PDF2Obsidian 변환기로 변환했습니다. 문서용으로 선별한 결과는 [sample_course.md](docs/demo-output/sample_course.md)에서 확인할 수 있습니다.
+
+변환된 Markdown에는 다음이 포함됩니다.
+
+- PDF 페이지 구분 표시
+- 검색 가능한 텍스트와 추론된 heading
+- PDF 표에서 변환된 Markdown table
+- Obsidian Wiki Link로 연결된 WebP 이미지 assets 5개
+- 페이지, 표, 이미지, 링크, 경고, 용량 정보를 포함한 변환 리포트
+
+### Lecture Transcript to Study Note
+
+샘플 VTT는 강의 자막 정리 모드로 변환했습니다. 문서용으로 선별한 결과는 [sample_lecture.md](docs/demo-output/sample_lecture.md)에서 확인할 수 있습니다.
+
+변환된 노트에는 다음이 포함됩니다.
+
+- 강의 개요
+- 핵심 개념
+- 타임스탬프 기반 강의 흐름
+- 복습 질문
+- 실행 문장이 감지된 경우 실행 체크리스트
+
+### Output Folder Structure
+
+```text
+docs/
+├─ samples/
+│  ├─ sample_course.pdf
+│  └─ sample_lecture.vtt
+└─ demo-output/
+   ├─ sample_course.md
+   ├─ sample_lecture.md
+   └─ assets/
+      └─ sample_course/
+         ├─ p001-img01.webp
+         ├─ p002-img01.webp
+         ├─ p003-img01.webp
+         ├─ p004-img01.webp
+         └─ p005-img01.webp
+```
+
+### Privacy Note
+
+모든 데모 파일은 synthetic sample입니다. 개인 PDF, 유료 학습자료, 복사한 강의 자막 원문, 개인 Obsidian vault 경로, 로컬 PC 경로는 예시로 커밋하지 않습니다.
+
 ## 변환 전/후 예시
 
 프로젝트 문서에는 합성 예시 또는 재배포 가능한 예시만 사용합니다. 개인 PDF, 유료 강의자료, 자막 원문, 개인 Obsidian 노트는 예시로 커밋하지 않습니다.

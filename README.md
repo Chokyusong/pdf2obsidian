@@ -167,6 +167,64 @@ PDF2Obsidian currently converts lecture subtitles into structured Markdown notes
 
 The default mode should work without external AI APIs. Rule-based structuring should be improved first. Optional local LLM support such as Ollama can be explored later. Optional OpenAI API support may be considered only as an enhancement, never as a required dependency.
 
+## Example Conversion
+
+This repository includes reproducible synthetic demo files. They are generated only for public documentation and do not contain real course names, paid material, private file paths, or copied transcript text.
+
+![Synthetic sample PDF cover](docs/assets/sample-course-cover.png)
+
+Demo inputs:
+
+- [sample_course.pdf](docs/samples/sample_course.pdf): cover, table of contents, body sections, one simple table, checklist, link, and five synthetic diagrams.
+- [sample_lecture.vtt](docs/samples/sample_lecture.vtt): about 100 timestamped subtitle cues covering introduction, concepts, examples, practice, summary, review questions, and mission.
+
+### PDF to Obsidian Markdown
+
+The sample PDF was converted with the actual PDF2Obsidian converter. The selected documentation output is available at [sample_course.md](docs/demo-output/sample_course.md).
+
+The converted Markdown includes:
+
+- PDF page markers.
+- Searchable text and inferred headings.
+- A Markdown table converted from the PDF table.
+- Five extracted WebP image assets linked with Obsidian wiki links.
+- A conversion report with page, table, image, link, warning, and size metrics.
+
+### Lecture Transcript to Study Note
+
+The sample VTT was converted with the lecture transcript mode. The selected documentation output is available at [sample_lecture.md](docs/demo-output/sample_lecture.md).
+
+The converted note includes:
+
+- Lecture overview.
+- Key concepts.
+- Timestamped lecture-flow sections.
+- Review questions.
+- Execution checklist when action sentences are detected.
+
+### Output Folder Structure
+
+```text
+docs/
+├─ samples/
+│  ├─ sample_course.pdf
+│  └─ sample_lecture.vtt
+└─ demo-output/
+   ├─ sample_course.md
+   ├─ sample_lecture.md
+   └─ assets/
+      └─ sample_course/
+         ├─ p001-img01.webp
+         ├─ p002-img01.webp
+         ├─ p003-img01.webp
+         ├─ p004-img01.webp
+         └─ p005-img01.webp
+```
+
+### Privacy Note
+
+All demo files are synthetic samples. Private PDFs, paid learning material, copied lecture transcripts, personal Obsidian vault paths, and local machine paths must not be committed as examples.
+
 ## Before / After Conversion Example
 
 The project documentation uses only synthetic or redistributable examples. Private PDFs, paid course material, subtitle transcripts, and personal Obsidian notes must not be committed as examples.
