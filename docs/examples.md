@@ -2,12 +2,23 @@
 
 This page shows the intended output style for the first MVP. The application keeps all conversion work on the user's computer.
 
+Private or paid learning materials must not be committed as examples. Sample files should be synthetic, public-domain, openly licensed, or explicitly redistributable.
+
 ## PDF Import
 
 Input:
 
 ```text
 sample.pdf
+```
+
+Before conversion:
+
+```text
+sample.pdf
+├─ Page 1: document title, two paragraphs, and one embedded diagram
+├─ Page 2: a simple table
+└─ Page 3: a source URL
 ```
 
 Output:
@@ -53,12 +64,21 @@ Extracted PDF text appears here.
 - Verification: only necessary PDF images and table-region fallbacks are saved.
 ```
 
+After conversion, the Markdown is editable and the image assets are linked with Obsidian wiki links. The original PDF is not copied into the output folder.
+
 ## Image Import
 
 Input:
 
 ```text
 diagram.png
+```
+
+Before conversion:
+
+```text
+diagram.png
+└─ A public or synthetic diagram image
 ```
 
 Output:
@@ -113,6 +133,13 @@ Input:
 
 ```text
 lecture.vtt
+```
+
+Before conversion:
+
+```text
+lecture.vtt
+└─ Short synthetic subtitle blocks with timestamps
 ```
 
 Output:
