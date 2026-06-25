@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- PDF conversion now prefers text-layer extraction and embedded image export.
+- PDF pages are no longer rendered as WebP images by default.
+- Lecture transcript conversion now produces structured study notes from cleaned transcript content.
+
 ## 0.1.1 - 2026-06-25
 
 ### Added

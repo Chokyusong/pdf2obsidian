@@ -70,7 +70,7 @@ def convert_file(
         if options.mode == "lecture":
             raise ValueError("PDF files cannot be converted in lecture transcript mode.")
         emit(f"Processing PDF: {source.name}")
-        pages = process_pdf(
+        pdf_result = process_pdf(
             source,
             assets_dir,
             quality=options.image_quality,
@@ -80,7 +80,7 @@ def convert_file(
             markdown_path,
             title=title,
             source_file=source.name,
-            pages=pages,
+            pdf_result=pdf_result,
             include_page_separator=options.include_page_separator,
         )
         return ConversionResult(source, item_dir, markdown_path, "pdf")

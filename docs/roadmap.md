@@ -6,7 +6,7 @@
 - Image file selection and conversion.
 - Drag and drop in the desktop GUI.
 - PDF text extraction with PyMuPDF.
-- PDF page rendering to WebP.
+- PDF text extraction and embedded image export.
 - Image compression to WebP.
 - Optional local OCR wrapper.
 - Obsidian Markdown output.

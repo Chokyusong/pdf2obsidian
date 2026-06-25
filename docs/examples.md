@@ -17,9 +17,7 @@ output/
 └─ sample/
    ├─ sample.md
    └─ assets/
-      ├─ page_001.webp
-      ├─ page_002.webp
-      └─ page_003.webp
+      └─ image_p001_001.webp
 ```
 
 Markdown:
@@ -36,17 +34,20 @@ type: "pdf-import"
 
 ## Page 1
 
-![[assets/page_001.webp]]
-
 Extracted PDF text appears here.
 
----
+<p align="center"><sub>PDF 1페이지 이미지</sub></p>
 
-## Page 2
+![[assets/image_p001_001.webp]]
 
-![[assets/page_002.webp]]
+## Conversion Report
 
-The next page text appears here.
+- Source pages: 3
+- Extracted text characters: 12000
+- Extracted PDF images: 1
+- Verification: text layer extraction was attempted before OCR.
+- Verification: page images are not rendered by default.
+- Verification: only PDF-embedded images are saved.
 ```
 
 ## Image Import

@@ -5,6 +5,8 @@ dist/
 build/
 *.spec
 output/
+결과/
+.tmp/
 .pytest_cache/
 .ruff_cache/
 .DS_Store

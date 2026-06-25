@@ -42,8 +42,12 @@ def _parse_timed_blocks(content: str) -> list[TranscriptBlock]:
 
         start = _normalize_timestamp(match.group("start"))
         end = _normalize_timestamp(match.group("end"))
+        trailing_text = lines[index][match.end() :].strip()
         index += 1
         text_lines: list[str] = []
+
+        if trailing_text:
+            text_lines.append(trailing_text)
 
         while index < len(lines) and lines[index].strip():
             line = lines[index].strip()
@@ -103,7 +107,7 @@ def read_transcript(path: str | Path) -> list[TranscriptBlock]:
     source = Path(path)
     content = source.read_text(encoding="utf-8-sig", errors="replace")
 
-    if source.suffix.lower() in {".srt", ".vtt"}:
+    if source.suffix.lower() in {".srt", ".vtt"} or TIMESTAMP_RE.search(content):
         blocks = _parse_timed_blocks(content)
         if blocks:
             return _merge_short_blocks(blocks)

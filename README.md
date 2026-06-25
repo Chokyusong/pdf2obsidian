@@ -16,7 +16,8 @@ It is designed for Windows users who want to keep their files on their own compu
 
 PDF2Obsidian helps students, researchers, and knowledge workers turn static learning material into reusable Obsidian notes. The first MVP focuses on reliable local conversion instead of cloud automation:
 
-- PDF pages become compressed WebP assets plus Markdown.
+- PDF text layers become lightweight Markdown.
+- Embedded PDF images become compressed WebP assets.
 - Images become compressed WebP assets plus Markdown.
 - Lecture subtitles become structured study notes.
 - Optional OCR runs only with locally installed OCR tools.
@@ -34,7 +35,7 @@ Many PDF notes, lecture images, and subtitles are difficult to reuse in Obsidian
 
 - Convert PDF files to Markdown.
 - Extract PDF page text with PyMuPDF.
-- Render every PDF page as a WebP image.
+- Extract embedded PDF images as compressed WebP assets.
 - Convert PNG, JPG, JPEG, and WebP images to compressed WebP.
 - Optional OCR wrapper with EasyOCR first and Tesseract fallback.
 - Convert SRT, VTT, TXT, and MD lecture transcripts into structured learning notes.
@@ -91,8 +92,7 @@ output/
 └─ sample/
    ├─ sample.md
    └─ assets/
-      ├─ page_001.webp
-      └─ page_002.webp
+      └─ image_p001_001.webp
 ```
 
 Markdown example:
@@ -109,9 +109,9 @@ type: "pdf-import"
 
 ## Page 1
 
-![[assets/page_001.webp]]
-
 Extracted text...
+
+![[assets/image_p001_001.webp]]
 ```
 
 For `lecture.vtt`, the app creates a study note with overview, concepts, timeline sections, checklist, review questions, and Obsidian keyword links.
