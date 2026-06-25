@@ -14,7 +14,7 @@ def _sample_png_bytes() -> bytes:
     return buffer.getvalue()
 
 
-def test_process_pdf_extracts_text_and_embedded_images_without_page_rendering(tmp_path):
+def test_process_pdf_extracts_text_page_render_and_embedded_images(tmp_path):
     pdf_path = tmp_path / "sample.pdf"
     assets_dir = tmp_path / "assets"
 
@@ -30,6 +30,7 @@ def test_process_pdf_extracts_text_and_embedded_images_without_page_rendering(tm
     assert result.page_count == 1
     assert result.image_count == 1
     assert "Hello PDF text layer" in result.pages[0].text
+    assert result.pages[0].page_asset_name == "page_001.webp"
     assert result.pages[0].images[0].asset_name.startswith("image_p001_")
+    assert (assets_dir / "page_001.webp").exists()
     assert (assets_dir / result.pages[0].images[0].asset_name).exists()
-    assert not (assets_dir / "page_001.webp").exists()

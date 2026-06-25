@@ -11,7 +11,8 @@ def test_write_pdf_markdown_creates_obsidian_links(tmp_path):
     pages = [
         SimpleNamespace(
             page_number=1,
-            text="First page text.",
+            page_asset_name="page_001.webp",
+            text="First line\nSecond line",
             images=[
                 SimpleNamespace(
                     page_number=1,
@@ -25,6 +26,7 @@ def test_write_pdf_markdown_creates_obsidian_links(tmp_path):
         ),
         SimpleNamespace(
             page_number=2,
+            page_asset_name="page_002.webp",
             text="Second page text.",
             images=[],
             ocr_warning=None,
@@ -54,10 +56,11 @@ def test_write_pdf_markdown_creates_obsidian_links(tmp_path):
     assert 'title: "sample"' in content
     assert 'source_file: "sample.pdf"' in content
     assert 'created: "2026-06-25"' in content
+    assert "![[assets/page_001.webp]]" in content
+    assert "![[assets/page_002.webp]]" in content
     assert "![[assets/image_p001_001.webp]]" in content
-    assert "![[assets/page_001.webp]]" not in content
     assert "## Page 1" in content
-    assert "First page text." in content
+    assert "First line  \nSecond line" in content
     assert "## Conversion Report" in content
     assert "Extracted PDF images: 1" in content
 

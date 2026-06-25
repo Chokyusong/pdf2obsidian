@@ -22,6 +22,7 @@ class PDFImageResult:
 @dataclass(frozen=True)
 class PDFPageResult:
     page_number: int
+    page_asset_name: str
     text: str
     images: list[PDFImageResult]
     ocr_warning: str | None = None
@@ -55,31 +56,50 @@ class PDFDocumentResult:
 def _clean_pdf_text(text: str) -> str:
     for char in ["\u200b", "\u200c", "\u200d", "\ufeff", "\u00a0"]:
         text = text.replace(char, " ")
-    lines = [line.strip() for line in text.splitlines()]
+    lines = [line.rstrip() for line in text.splitlines()]
     paragraphs: list[str] = []
     buffer: list[str] = []
 
     for line in lines:
+        line = line.strip()
         if not line:
             if buffer:
-                paragraphs.append(" ".join(buffer).strip())
+                paragraphs.append("\n".join(buffer).strip())
                 buffer = []
-            continue
-
-        # Keep obvious headings or list items on their own line.
-        if line.startswith(("-", "*", "•")) or line.endswith(":"):
-            if buffer:
-                paragraphs.append(" ".join(buffer).strip())
-                buffer = []
-            paragraphs.append(line)
             continue
 
         buffer.append(line)
 
     if buffer:
-        paragraphs.append(" ".join(buffer).strip())
+        paragraphs.append("\n".join(buffer).strip())
 
     return "\n\n".join(paragraph for paragraph in paragraphs if paragraph)
+
+
+def _extract_layout_text(page: fitz.Page) -> str:
+    """Extract text by visual blocks so line breaks survive better in Markdown."""
+    blocks: list[str] = []
+    text_dict = page.get_text("dict", sort=True)
+
+    for block in text_dict.get("blocks", []):
+        if block.get("type") != 0:
+            continue
+
+        lines: list[str] = []
+        for line in block.get("lines", []):
+            line_text = "".join(span.get("text", "") for span in line.get("spans", []))
+            line_text = line_text.rstrip()
+            if line_text.strip():
+                lines.append(line_text)
+
+        block_text = _clean_pdf_text("\n".join(lines))
+        if block_text:
+            blocks.append(block_text)
+
+    if blocks:
+        return "\n\n".join(blocks)
+
+    return _clean_pdf_text(page.get_text("text", sort=True))
 
 
 def _should_keep_image(width: int, height: int) -> bool:
@@ -111,6 +131,12 @@ def _save_pdf_image(
         return image.width, image.height
 
 
+def _save_page_render(page: fitz.Page, output_path: Path, quality: int) -> None:
+    pixmap = page.get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
+    with Image.open(BytesIO(pixmap.tobytes("png"))) as image:
+        image.save(output_path, "WEBP", quality=quality, method=6)
+
+
 def process_pdf(
     input_path: str | Path,
     assets_dir: str | Path,
@@ -126,7 +152,11 @@ def process_pdf(
 
     with fitz.open(source) as document:
         for page_index, page in enumerate(document, start=1):
-            text = _clean_pdf_text(page.get_text("text"))
+            page_asset_name = f"page_{page_index:03d}.webp"
+            page_output_path = assets / page_asset_name
+            _save_page_render(page, page_output_path, quality)
+
+            text = _extract_layout_text(page)
             warning = None
             images: list[PDFImageResult] = []
 
@@ -157,18 +187,14 @@ def process_pdf(
 
             if ocr_enabled and not text:
                 # OCR is only attempted when the PDF has no extractable text on this page.
-                fallback_asset_name = f"ocr_page_{page_index:03d}.webp"
-                fallback_output_path = assets / fallback_asset_name
-                pixmap = page.get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
-                with Image.open(BytesIO(pixmap.tobytes("png"))) as image:
-                    image.save(fallback_output_path, "WEBP", quality=quality, method=6)
-                result = ocr.extract_text(fallback_output_path)
+                result = ocr.extract_text(page_output_path)
                 text = result.text
                 warning = result.warning
 
             pages.append(
                 PDFPageResult(
                     page_number=page_index,
+                    page_asset_name=page_asset_name,
                     text=text,
                     images=images,
                     ocr_warning=warning,

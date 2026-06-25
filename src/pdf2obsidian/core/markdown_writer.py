@@ -24,6 +24,19 @@ def _frontmatter(title: str, source_file: str, doc_type: str, created: date | No
     )
 
 
+def _preserve_markdown_linebreaks(text: str) -> str:
+    """Use Markdown hard breaks so Obsidian preview keeps PDF line boundaries."""
+    paragraphs = text.split("\n\n")
+    rendered: list[str] = []
+
+    for paragraph in paragraphs:
+        lines = [line.rstrip() for line in paragraph.splitlines()]
+        hard_lines = [f"{line}  " if line else "" for line in lines]
+        rendered.append("\n".join(hard_lines).rstrip())
+
+    return "\n\n".join(part for part in rendered if part)
+
+
 def write_pdf_markdown(
     markdown_path: str | Path,
     title: str,
@@ -42,18 +55,22 @@ def write_pdf_markdown(
             [
                 f"## Page {page.page_number}",
                 "",
+                f"![[assets/{page.page_asset_name}]]",
+                "",
+                "### Extracted text",
+                "",
             ]
         )
 
         if page.text:
-            lines.extend([page.text, ""])
+            lines.extend([_preserve_markdown_linebreaks(page.text), ""])
         else:
             lines.extend(["> No extractable text was found on this page.", ""])
 
         for image in page.images:
             lines.extend(
                 [
-                    f'<p align="center"><sub>PDF {page.page_number}페이지 이미지</sub></p>',
+                    f"### Extracted image {image.asset_name}",
                     "",
                     f"![[assets/{image.asset_name}]]",
                     "",
@@ -79,8 +96,8 @@ def write_pdf_markdown(
     lines.extend(
         [
             "- Verification: text layer extraction was attempted before OCR.",
-            "- Verification: page images are not rendered by default.",
-            "- Verification: only PDF-embedded images are saved.",
+            "- Verification: each PDF page is rendered to WebP for visual layout fidelity.",
+            "- Verification: PDF-embedded images are also extracted when large enough.",
         ]
     )
 
