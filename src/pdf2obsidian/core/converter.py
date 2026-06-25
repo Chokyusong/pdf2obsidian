@@ -6,7 +6,11 @@ from pathlib import Path
 
 from pdf2obsidian.core.image_processor import save_image_as_webp
 from pdf2obsidian.core.lecture_note_writer import write_lecture_note
-from pdf2obsidian.core.markdown_writer import write_image_markdown, write_pdf_markdown
+from pdf2obsidian.core.markdown_writer import (
+    PDF_IMPORT_TEXT_PAGE_IMAGE,
+    write_image_markdown,
+    write_pdf_markdown,
+)
 from pdf2obsidian.core.pdf_processor import process_pdf
 from pdf2obsidian.core.transcript_processor import read_transcript
 from pdf2obsidian.utils.paths import (
@@ -28,6 +32,7 @@ class ConversionOptions:
     image_quality: int = 75
     ocr_enabled: bool = False
     include_page_separator: bool = True
+    pdf_import_mode: str = PDF_IMPORT_TEXT_PAGE_IMAGE
     mode: str = "auto"
     transcript_preserve_level: str = "medium"
     transcript_output_format: str = "study_note"
@@ -82,6 +87,7 @@ def convert_file(
             source_file=source.name,
             pdf_result=pdf_result,
             include_page_separator=options.include_page_separator,
+            pdf_import_mode=options.pdf_import_mode,
         )
         return ConversionResult(source, item_dir, markdown_path, "pdf")
 

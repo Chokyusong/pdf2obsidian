@@ -54,6 +54,7 @@ Many PDF notes, lecture images, and subtitles are difficult to reuse in Obsidian
 - Extract PDF page text with PyMuPDF.
 - Render PDF pages as WebP previews.
 - Extract embedded PDF images as compressed WebP assets.
+- Choose PDF import mode: Text Markdown, Page Image Markdown, or Text + Page Image Markdown.
 - Convert PNG, JPG, JPEG, and WebP images to compressed WebP.
 - Optional OCR wrapper with EasyOCR first and Tesseract fallback.
 - Convert SRT, VTT, TXT, and MD lecture transcripts into structured learning notes.
@@ -140,6 +141,12 @@ Extracted text...
 ```
 
 For `lecture.vtt`, the app creates a study note with overview, concepts, timeline sections, checklist, review questions, and Obsidian keyword links.
+
+## PDF Import Modes
+
+- `Text Markdown`: extracts searchable text and embedded PDF images.
+- `Page Image Markdown`: renders each PDF page as `page_001.webp`, `page_002.webp`, and inserts only page images.
+- `Text + Page Image Markdown`: inserts the page image first, then extracted text, then embedded images. This is the default mode.
 
 ## Windows Notes
 

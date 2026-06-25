@@ -4,6 +4,15 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+PDF_IMPORT_TEXT = "text_markdown"
+PDF_IMPORT_PAGE_IMAGE = "page_image_markdown"
+PDF_IMPORT_TEXT_PAGE_IMAGE = "text_page_image_markdown"
+PDF_IMPORT_MODES = {
+    PDF_IMPORT_TEXT,
+    PDF_IMPORT_PAGE_IMAGE,
+    PDF_IMPORT_TEXT_PAGE_IMAGE,
+}
+
 
 def _yaml_value(value: str) -> str:
     return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
@@ -43,9 +52,13 @@ def write_pdf_markdown(
     source_file: str,
     pdf_result: Any,
     include_page_separator: bool = True,
+    pdf_import_mode: str = PDF_IMPORT_TEXT_PAGE_IMAGE,
     created: date | None = None,
 ) -> Path:
     path = Path(markdown_path)
+    selected_mode = (
+        pdf_import_mode if pdf_import_mode in PDF_IMPORT_MODES else PDF_IMPORT_TEXT_PAGE_IMAGE
+    )
     lines = [_frontmatter(title, source_file, "pdf-import", created), f"# {title}", ""]
 
     for index, page in enumerate(pdf_result.pages):
@@ -55,27 +68,31 @@ def write_pdf_markdown(
             [
                 f"## Page {page.page_number}",
                 "",
-                f"![[assets/{page.page_asset_name}]]",
-                "",
-                "### Extracted text",
-                "",
             ]
         )
 
-        if page.text:
-            lines.extend([_preserve_markdown_linebreaks(page.text), ""])
-        else:
-            lines.extend(["> No extractable text was found on this page.", ""])
+        if selected_mode in {PDF_IMPORT_PAGE_IMAGE, PDF_IMPORT_TEXT_PAGE_IMAGE}:
+            lines.extend([f"![[assets/{page.page_asset_name}]]", ""])
 
-        for image in page.images:
-            lines.extend(
-                [
-                    f"### Extracted image {image.asset_name}",
-                    "",
-                    f"![[assets/{image.asset_name}]]",
-                    "",
-                ]
-            )
+        if selected_mode in {PDF_IMPORT_TEXT, PDF_IMPORT_TEXT_PAGE_IMAGE}:
+            if selected_mode == PDF_IMPORT_TEXT_PAGE_IMAGE:
+                lines.extend(["### Extracted text", ""])
+
+            if page.text:
+                lines.extend([_preserve_markdown_linebreaks(page.text), ""])
+            else:
+                lines.extend(["> No extractable text was found on this page.", ""])
+
+        if selected_mode in {PDF_IMPORT_TEXT, PDF_IMPORT_TEXT_PAGE_IMAGE}:
+            for image in page.images:
+                lines.extend(
+                    [
+                        f"### Extracted image {image.asset_name}",
+                        "",
+                        f"![[assets/{image.asset_name}]]",
+                        "",
+                    ]
+                )
 
         if page.ocr_warning:
             lines.extend([f"> OCR note: {page.ocr_warning}", ""])
@@ -88,6 +105,7 @@ def write_pdf_markdown(
             f"- Extracted PDF images: {pdf_result.image_count}",
             f"- Original PDF size: {pdf_result.source_size_bytes:,} bytes",
             f"- Saved asset size: {pdf_result.asset_size_bytes:,} bytes",
+            f"- PDF import mode: {selected_mode}",
         ]
     )
     if pdf_result.size_reduction_percent is not None:
