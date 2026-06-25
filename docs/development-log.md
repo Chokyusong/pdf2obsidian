@@ -42,7 +42,7 @@ Replace `<github-username>` with your GitHub username.
 - README completed.
 - MIT LICENSE included.
 - CHANGELOG included.
-- AGENTS.md kept in the repository.
+- Repository guidance is kept concise and public-safe.
 - requirements.txt completed.
 - pyproject.toml completed.
 - pytest should pass before push.

@@ -56,3 +56,5 @@ The project does not aim to become a general quiz, flashcard, mind map, or chatb
 - Publish small release notes for every tagged version.
 - Add beginner-friendly contribution tasks.
 - Keep privacy and local-first constraints visible in documentation.
+- Track public maintenance tasks in [maintenance.md](maintenance.md) before creating GitHub Issues.
+- Run a privacy hardcoding scan before releases.
