@@ -1,4 +1,4 @@
-# AGENTS.md
+# Project Instructions
 
 # PDF2Obsidian 프로젝트 규칙
 

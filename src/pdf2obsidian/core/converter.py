@@ -35,7 +35,6 @@ from pdf2obsidian.utils.paths import (
 
 LogCallback = Callable[[str], None]
 ProgressCallback = Callable[[int, int], None]
-FileProgressCallback = Callable[[int, str], None]
 
 
 @dataclass(frozen=True)
@@ -82,7 +81,6 @@ def convert_file(
     input_path: str | Path,
     options: ConversionOptions,
     log: LogCallback | None = None,
-    progress: FileProgressCallback | None = None,
 ) -> ConversionResult:
     source = Path(input_path)
     if not source.exists():
@@ -97,40 +95,25 @@ def convert_file(
         if log:
             log(message)
 
-    def emit_progress(percent: int, message: str) -> None:
-        if progress:
-            progress(max(0, min(100, percent)), message)
-
-    emit_progress(0, f"Starting conversion: {source.name}")
-
     if is_pdf(source):
         if options.mode == "lecture":
             raise ValueError("PDF files cannot be converted in lecture transcript mode.")
 
         if options.pdf_output_format == "webp_compression":
             emit(f"Compressing PDF: {source.name}")
-
-            def compression_progress(done: int, count: int) -> None:
-                percent = 10 + int((done / count) * 80) if count else 90
-                emit_progress(percent, f"Compressing PDF page {done}/{count}: {source.name}")
-
-            emit_progress(5, f"Preparing PDF compression: {source.name}")
             compression_result = compress_pdf_to_webp_pdf(
                 source,
                 item_dir,
                 quality=options.image_quality,
-                progress=compression_progress,
             )
-            emit_progress(95, f"Writing PDF compression report: {source.name}")
             reduction = compression_result.size_reduction_percent
             reduction_text = "unknown" if reduction is None else f"{reduction:.1f}%"
             emit(
                 "PDF compression result: "
                 f"{_format_bytes(compression_result.source_size_bytes)} -> "
                 f"{_format_bytes(compression_result.output_size_bytes)} "
-                    f"({reduction_text} smaller)"
+                f"({reduction_text} smaller)"
             )
-            emit_progress(100, f"Finished PDF compression: {source.name}")
             return ConversionResult(
                 source,
                 item_dir,
@@ -139,12 +122,6 @@ def convert_file(
             )
 
         emit(f"Processing PDF: {source.name}")
-
-        def pdf_progress(done: int, count: int) -> None:
-            percent = 10 + int((done / count) * 75) if count else 85
-            emit_progress(percent, f"Processing PDF page {done}/{count}: {source.name}")
-
-        emit_progress(5, f"Preparing PDF conversion: {source.name}")
         pdf_assets_dir = item_dir / "Files" / title
         pdf_assets_dir.mkdir(parents=True, exist_ok=True)
         pdf_result = process_pdf(
@@ -152,9 +129,7 @@ def convert_file(
             pdf_assets_dir,
             quality=options.image_quality,
             ocr_enabled=options.ocr_enabled,
-            progress=pdf_progress,
         )
-        emit_progress(90, f"Writing PDF Markdown: {source.name}")
         write_pdf_markdown(
             markdown_path,
             title=title,
@@ -163,37 +138,31 @@ def convert_file(
             include_page_separator=options.include_page_separator,
             asset_link_prefix=f"Files/{title}",
         )
-        emit_progress(100, f"Finished PDF conversion: {source.name}")
         return ConversionResult(source, item_dir, markdown_path, "pdf")
 
     if is_image(source):
         if options.mode == "lecture":
             raise ValueError("Image files cannot be converted in lecture transcript mode.")
         emit(f"Processing image: {source.name}")
-        emit_progress(10, f"Preparing image conversion: {source.name}")
         image_result = save_image_as_webp(
             source,
             assets_dir,
             quality=options.image_quality,
             ocr_enabled=options.ocr_enabled,
         )
-        emit_progress(80, f"Writing image Markdown: {source.name}")
         write_image_markdown(
             markdown_path,
             title=title,
             source_file=source.name,
             image_result=image_result,
         )
-        emit_progress(100, f"Finished image conversion: {source.name}")
         return ConversionResult(source, item_dir, markdown_path, "image")
 
     if is_transcript(source):
         if options.mode == "pdf_image":
             raise ValueError("Transcript files cannot be converted in PDF/Image mode.")
         emit(f"Processing transcript: {source.name}")
-        emit_progress(10, f"Reading transcript: {source.name}")
         blocks = read_transcript(source)
-        emit_progress(25, f"Transcript parsed: {source.name}")
         ai_mode = normalize_ai_mode(options.transcript_ai_mode)
         output_mode = normalize_output_mode(
             options.transcript_output_mode or options.transcript_output_format
@@ -202,10 +171,6 @@ def convert_file(
         if ai_mode == AI_MODE_OLLAMA:
             if is_ollama_running(options.ollama_base_url):
                 emit(f"Using Local AI (Ollama) with model: {options.ollama_model}")
-
-                def ai_progress(percent: int, message: str) -> None:
-                    emit_progress(25 + int(percent * 0.65), message)
-
                 reconstruction = reconstruct_blocks_with_ollama(
                     blocks,
                     title=title,
@@ -214,7 +179,6 @@ def convert_file(
                     output_language=options.transcript_output_language,
                     model=options.ollama_model,
                     base_url=options.ollama_base_url,
-                    progress=ai_progress,
                 )
                 if reconstruction.warning:
                     emit(reconstruction.warning)
@@ -226,9 +190,7 @@ def convert_file(
                         "Warning: the generated Markdown is less than 25% of the source text. "
                         "Source details may be missing. Try a larger model or rerun the conversion."
                     )
-                emit_progress(95, f"Writing transcript Markdown: {source.name}")
                 markdown_path.write_text(reconstruction.markdown.rstrip() + "\n", encoding="utf-8")
-                emit_progress(100, f"Finished transcript conversion: {source.name}")
                 return ConversionResult(source, item_dir, markdown_path, "transcript")
             raise ValueError(
                 "Ollama was not detected. Start Ollama, click Check Ollama, "
@@ -241,7 +203,6 @@ def convert_file(
 
         if ai_mode == AI_MODE_BASIC:
             emit(f"Using Basic (No AI) mode with output mode: {output_mode}")
-        emit_progress(70, f"Writing transcript Markdown: {source.name}")
         write_lecture_note(
             markdown_path,
             title=title,
@@ -253,7 +214,6 @@ def convert_file(
             include_review_questions=options.transcript_review_questions,
             include_checklist=options.transcript_checklist,
         )
-        emit_progress(100, f"Finished transcript conversion: {source.name}")
         return ConversionResult(source, item_dir, markdown_path, "transcript")
 
     raise ValueError(f"Unsupported file type: {source.suffix}")
@@ -267,26 +227,11 @@ def convert_files(
 ) -> list[ConversionResult]:
     results: list[ConversionResult] = []
     total = len(input_paths)
-    total_units = max(total, 1) * 100
 
     for index, input_path in enumerate(input_paths, start=1):
-        file_start = (index - 1) * 100
-        last_message = ""
-        last_percent = -1
-
-        def file_progress(percent: int, message: str, start_units: int = file_start) -> None:
-            nonlocal last_message, last_percent
-            bounded = max(0, min(100, percent))
-            if progress:
-                progress(start_units + bounded, total_units)
-            if log and (bounded != last_percent or message != last_message):
-                log(f"{message} ({bounded}%)")
-            last_message = message
-            last_percent = bounded
-
-        result = convert_file(input_path, options, log=log, progress=file_progress)
+        result = convert_file(input_path, options, log=log)
         results.append(result)
         if progress:
-            progress(index * 100, total_units)
+            progress(index, total)
 
     return results
