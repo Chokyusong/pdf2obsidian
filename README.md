@@ -96,7 +96,9 @@ PDF2Obsidian should remain usable without OpenAI, Claude, Gemini, or any externa
 
 - [Examples](docs/examples.md)
 - [Roadmap](docs/roadmap.md)
+- [Design decisions](docs/decisions.md)
 - [Maintenance tasks](docs/maintenance.md)
+- [Release checklist](docs/release-checklist.md)
 - [Web app plan](docs/webapp-plan.md)
 - [Contributing](CONTRIBUTING.md)
 

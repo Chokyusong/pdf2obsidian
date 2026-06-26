@@ -1,93 +1,101 @@
 # PDF2Obsidian Roadmap
 
+This roadmap describes public project direction. For design rationale, see [Design decisions](decisions.md).
+
 ## Product Focus
 
 PDF2Obsidian focuses on two outcomes:
 
-1. Convert PDFs into Obsidian Markdown without drifting away from the original visual layout.
-2. Convert lecture or YouTube subtitles into detailed study material that can be understood without watching the original video.
+1. Convert PDFs into Obsidian-ready Markdown and lightweight assets while preserving as much useful structure as practical.
+2. Convert lecture subtitles into detailed study material that can be understood without watching the original video.
 
-The project does not aim to become a general quiz, flashcard, mind map, or chatbot app. Optional local AI may be considered later only if it improves lecture-note reconstruction while keeping the local-first workflow.
+The project does not aim to become a general quiz, flashcard, mind map, or chatbot app. AI features must remain optional and user-controlled.
 
-## 0.1.0 MVP
+## Current Status
 
+The current public release is `v0.1.5`.
+
+Completed or available:
+
+- Windows desktop GUI.
 - PDF file selection and conversion.
 - Image file selection and conversion.
 - Drag and drop in the desktop GUI.
 - PDF text extraction with PyMuPDF.
-- PDF page rendering, text extraction, and embedded image export.
+- Basic PDF structure restoration for headings, lists, paragraphs, and tables.
+- Embedded PDF image extraction.
 - Image compression to WebP.
+- PDF to compressed raster PDF output mode.
 - Optional local OCR wrapper.
-- Obsidian Markdown output.
-- Lecture transcript to study-note conversion.
-- Basic pytest coverage.
+- SRT, VTT, TXT, and Markdown transcript input.
+- Structured transcript-to-study-note output.
+- Optional Local AI mode with Ollama.
+- Ollama status checks, model refresh, model pull, and user-confirmed installer workflow.
+- GUI progress and log updates for PDF conversion, PDF compression, transcript conversion, and Ollama work.
+- External prompt files packaged into Windows builds.
+- Basic pytest and Ruff coverage.
 - Windows PyInstaller build script.
+- GitHub release ZIP asset.
 
-## 0.2.0
+## Next Release Goals
 
-- Add downloadable Windows release asset.
-- Add more real-world sample outputs.
-- Add transcript parsing tests.
-- Improve PDF visual layout fidelity.
-- Improve lecture subtitle cleanup and detailed reconstruction.
-- Start Lecture Transcript Structuring improvements:
-  - Merge subtitle lines into readable paragraphs.
-  - Split lecture transcripts by semantic sections, not only timestamps.
-  - Detect common lecture patterns such as introduction, definition, example, summary, mission, checklist, and review questions.
-  - Improve keyword extraction so meaningless frequent words are not treated as core concepts.
-- Improve OCR setup documentation.
+Near-term work should focus on reliability, verification, and user trust:
+
+- Add automated workflow tests for the three main conversion paths:
+  - subtitle to Markdown
+  - PDF to Markdown plus images
+  - PDF to compressed WebP PDF
+- Add a release privacy scan for private paths, paid material titles, raw transcripts, API keys, and generated output folders.
+- Add GitHub Actions release build research or automation.
+- Improve README screenshots with only safe public sample files.
+- Improve GUI status messages for long Ollama generations.
+- Add clearer warnings when local AI output is saved with quality issues.
+- Document model recommendations and expected performance more clearly.
+
+## PDF Conversion Improvements
+
+- Improve layout fidelity for multi-column PDFs.
+- Improve table extraction and fallback behavior for irregular tables.
+- Add regression tests for PDF headings, lists, tables, embedded images, and blank-image filtering.
 - Add image size controls.
 - Add Markdown template settings.
-- Add CLI entry point for batch conversion.
 - Add better conversion error reporting per file.
 
-## 0.3.0
+## Lecture Transcript Improvements
 
-- Fixed Lecture Study Note Template for Obsidian-ready transcript output.
-- AI Mode selection: Basic, Local AI with Ollama, and future Cloud AI.
-- Output Mode selection: Simple Note, Study Note, Ebook, and Executive Summary.
-- Optional Ollama integration foundation without automatic installation.
-- Mock-tested local AI summarization pipeline.
-- More transcript templates for Obsidian-ready study notes.
-- Generate lecture notes with overview, key concepts, examples, action steps, cautions, review questions, and execution checklist.
-- YouTube subtitle import workflow.
+- Improve subtitle line merging into readable paragraphs.
+- Improve semantic section detection for introductions, definitions, examples, summaries, missions, checklists, and review questions.
+- Improve Korean keyword extraction so meaningless frequent words are not treated as core concepts.
+- Add more tests for prompt-leak cleanup, language heading rules, examples, action steps, cautions, and review questions.
+- Keep prompts general and avoid course-specific hardcoding.
 
-## 0.4.0
+## AI Roadmap
 
-- Assisted Ollama installation via a clear user-confirmed workflow, if safe.
-- OpenAI-compatible cloud AI mode as an optional enhancement.
-- Local web app prototype with FastAPI or Streamlit.
-- Optional zip export.
-- Table extraction research.
+Default conversion must continue to work without cloud AI.
+
+Possible future work:
+
+- Optional high-quality retry mode for Ollama users who accept slower generation.
+- Optional OpenAI-compatible cloud AI mode as an explicit enhancement.
+- Clear separation between Basic, Local AI, and future Cloud AI modes.
+- Better local model guidance for normal PCs versus high-memory systems.
 
 ## Later
 
-- Optional local LLM integration, such as Ollama, only for lecture-note reconstruction.
-- Optional OpenAI API support may be considered only as an enhancement, never as a required dependency.
-- Automated release packaging.
+- CLI entry point for batch conversion.
+- YouTube subtitle import workflow.
+- Optional zip export.
+- Local web app prototype with FastAPI or Streamlit.
+- DOCX and PPTX research.
+- Audio or video transcript workflow research.
 - Signed Windows installer research.
-
-## Lecture Transcript Structuring
-
-The current lecture transcript feature is an MVP that converts subtitle files into Markdown study notes. Future work should improve it into meaning-aware structuring while preserving the local-first default.
-
-Default mode should work without external AI APIs. Rule-based structuring should be improved first. Optional local LLM support such as Ollama can be explored later. Optional OpenAI API support may be considered only as an enhancement, never as a required dependency.
-
-Target output:
-
-- Lecture overview.
-- Key concepts.
-- Examples.
-- Action steps.
-- Cautions.
-- Review questions.
-- Execution checklist.
 
 ## Open Source Maintenance Goals
 
 - Keep issues organized with labels for PDF, image, OCR, transcript, GUI, docs, and tests.
-- Publish small release notes for every tagged version.
+- Publish release notes for every tagged version.
 - Add beginner-friendly contribution tasks.
 - Keep privacy and local-first constraints visible in documentation.
 - Track public maintenance tasks in [maintenance.md](maintenance.md) before creating GitHub Issues.
 - Run a privacy hardcoding scan before releases.
+- Update [Design decisions](decisions.md) when project direction changes.

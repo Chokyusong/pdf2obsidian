@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Added public design decision and release checklist documentation.
+
 ## 0.1.5 - 2026-06-27
 
 ### Added

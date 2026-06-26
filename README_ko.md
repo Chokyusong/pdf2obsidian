@@ -96,7 +96,9 @@ PDF2Obsidian은 OpenAI, Claude, Gemini 또는 기타 외부 AI API 없이도 계
 
 - [출력 예시](docs/examples.md)
 - [로드맵](docs/roadmap.md)
+- [설계 결정](docs/decisions.md)
 - [유지보수 작업](docs/maintenance.md)
+- [릴리즈 체크리스트](docs/release-checklist.md)
 - [웹앱 확장 계획](docs/webapp-plan.md)
 - [기여 안내](CONTRIBUTING.md)
 

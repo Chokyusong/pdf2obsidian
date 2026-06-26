@@ -10,6 +10,8 @@ Thank you for considering a contribution to PDF2Obsidian.
 - Keep the MVP simple and reliable.
 - Prefer clear documentation and tests over hidden behavior.
 - Keep public examples safe: do not commit personal PDFs, paid course material, subtitle transcripts, or private Obsidian notes.
+- Check [Design decisions](docs/decisions.md) before changing project direction.
+- Check [Roadmap](docs/roadmap.md) before adding new large features.
 
 ## Development Setup
 
@@ -52,5 +54,6 @@ When in doubt, create a tiny synthetic PDF, image, or transcript directly inside
 - Ruff passes.
 - README or docs are updated when behavior changes.
 - Tests and docs are updated when conversion behavior changes.
+- `docs/decisions.md` is updated when a design decision changes.
 - Privacy check is complete: no private file names, local paths, paid material titles, transcripts, or personal notes are included.
 - No generated `output/`, `.venv/`, build artifacts, or private notes are committed.
