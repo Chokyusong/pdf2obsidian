@@ -144,3 +144,19 @@ def test_version_compare_detects_update():
     assert ollama_client._compare_versions("0.9.6", "0.10.0") < 0
     assert ollama_client._compare_versions("0.10.0", "0.9.6") > 0
     assert ollama_client._compare_versions("0.10.0", "0.10.0") == 0
+
+
+def test_cli_runner_forces_utf8_decoding(monkeypatch):
+    captured = {}
+
+    def fake_run(*args, **kwargs):  # noqa: ANN002, ANN003
+        captured.update(kwargs)
+        return SimpleNamespace(returncode=0, stdout="버전: 0.10.0", stderr="")
+
+    monkeypatch.setattr(ollama_client.subprocess, "run", fake_run)
+
+    result = ollama_client._run_cli(["winget", "show"], timeout_sec=5)
+
+    assert result.stdout == "버전: 0.10.0"
+    assert captured["encoding"] == "utf-8"
+    assert captured["errors"] == "replace"

@@ -136,7 +136,7 @@ def test_transcript_ollama_failure_raises_instead_of_fallback(tmp_path, monkeypa
     assert not (output_root / "lecture" / "lecture.md").exists()
 
 
-def test_transcript_ollama_short_output_logs_preservation_warning(tmp_path, monkeypatch):
+def test_transcript_ollama_short_output_logs_quality_warning(tmp_path, monkeypatch):
     transcript_path = tmp_path / "lecture.txt"
     output_root = tmp_path / "output"
     transcript_path.write_text("원문 보존 테스트입니다. " * 200, encoding="utf-8")

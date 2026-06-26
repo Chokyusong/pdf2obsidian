@@ -7,6 +7,8 @@ build/
 output/
 결과/
 .tmp/
+.trash/
+AGENTS.local.md
 .pytest_cache/
 .ruff_cache/
 .DS_Store

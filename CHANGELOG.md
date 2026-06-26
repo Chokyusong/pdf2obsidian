@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 0.1.4 - 2026-06-27
+
+### Changed
+
+- Replaced the Ollama lecture reconstruction prompt with a universal Korean/English prompt.
+- Removed course-specific hardcoded lecture preservation checks and forced content insertion.
+- Updated Local AI documentation for the optional bilingual transcript-to-Obsidian workflow.
+
+### Fixed
+
+- Fixed Windows CLI decoding for Ollama and winget checks so Korean output does not crash latest-version checks.
+
 ## 0.1.3 - 2026-06-26
 
 ### Added

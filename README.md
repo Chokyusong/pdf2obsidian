@@ -26,8 +26,8 @@ It is designed for Windows users who want to keep their files on their own compu
 
 The latest Windows build is available from GitHub Releases:
 
-- [PDF2Obsidian v0.1.3](https://github.com/Chokyusong/pdf2obsidian/releases/tag/v0.1.3)
-- [Download Windows ZIP](https://github.com/Chokyusong/pdf2obsidian/releases/download/v0.1.3/PDF2Obsidian-v0.1.3-windows.zip)
+- [PDF2Obsidian v0.1.4](https://github.com/Chokyusong/pdf2obsidian/releases/tag/v0.1.4)
+- [Download Windows ZIP](https://github.com/Chokyusong/pdf2obsidian/releases/download/v0.1.4/PDF2Obsidian-v0.1.4-windows.zip)
 
 ## Project Goal
 
@@ -182,14 +182,14 @@ For `lecture.vtt`, the app creates a study note with overview, concepts, timelin
 
 PDF2Obsidian currently converts lecture subtitles into structured Markdown notes. A future goal is to improve this into meaning-aware lecture note structuring, where subtitles are merged, grouped, and reorganized into readable study notes for Obsidian.
 
-The default mode should work without external AI APIs. Rule-based structuring should be improved first. Optional local LLM support such as Ollama can be explored later. Optional OpenAI API support may be considered only as an enhancement, never as a required dependency.
+The default mode works without external AI APIs. Local AI with Ollama is optional and runs on the user's own machine. Optional OpenAI-compatible cloud AI may be considered later only as an enhancement, never as a required dependency.
 
 ## AI Mode
 
 Lecture transcript processing has an AI Mode design with three levels:
 
 - `Basic (No AI)`: default, rule-based, fully local, no model or internet required.
-- `Local AI (Ollama)`: optional local LLM mode for better lecture-note reconstruction when Ollama is already installed and running.
+- `Local AI (Ollama)`: optional local LLM mode for Korean and English lecture-note reconstruction when Ollama is installed and running.
 - `Cloud AI (OpenAI Compatible) - Future`: planned optional enhancement only. It is not enabled by default and is not required for core conversion.
 
 AI Mode controls the processing engine. Output Mode controls the shape of the result:
@@ -206,6 +206,8 @@ Output Language controls the language of transcript notes:
 - `English`: translate or rewrite the result in English.
 
 PDF2Obsidian does not require cloud AI. Files stay on the local machine in Basic mode and when using a local Ollama server. Ollama setup is optional and starts only after the user explicitly clicks the Ollama setup or model pull buttons.
+
+The Ollama transcript prompt is a universal bilingual prompt for Korean and English lecture material. It no longer contains course-specific hardcoded preservation terms; quality checks focus on Markdown structure, coverage, and avoiding unsupported facts from outside the source.
 
 Recommended Ollama models:
 
@@ -229,7 +231,7 @@ The model selector reads installed Ollama models dynamically from the local Olla
 
 ## Lecture Study Note Template
 
-The default transcript output follows a fixed Obsidian study-note structure. It is designed to preserve key concepts, explanations, examples, numbers, comparisons, missions, action steps, and review points without inventing unsupported facts.
+The default transcript output follows a fixed Obsidian study-note structure. It is designed to preserve key concepts, explanations, examples, numbers, comparisons, missions, action steps, and review points without inventing unsupported facts. With Ollama selected, transcript files are reconstructed as Obsidian-ready lecture replacement study notes.
 
 See [Lecture Study Note Template](docs/lecture-study-note-template.md).
 

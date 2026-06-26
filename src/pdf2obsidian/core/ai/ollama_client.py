@@ -95,13 +95,7 @@ def is_ollama_installed(base_url: str = DEFAULT_BASE_URL) -> bool:
     executable = get_ollama_executable_path()
     if executable:
         try:
-            result = subprocess.run(
-                [executable, "--version"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-                check=False,
-            )
+            result = _run_cli([executable, "--version"], timeout_sec=10)
         except (OSError, subprocess.SubprocessError):
             return True
         return result.returncode == 0 or bool(result.stdout.strip() or result.stderr.strip())
@@ -113,13 +107,7 @@ def get_ollama_version() -> str | None:
     if not executable:
         return None
     try:
-        result = subprocess.run(
-            [executable, "--version"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-            check=False,
-        )
+        result = _run_cli([executable, "--version"], timeout_sec=10)
     except (OSError, subprocess.SubprocessError):
         return None
     return _extract_version(f"{result.stdout}\n{result.stderr}")
@@ -130,7 +118,7 @@ def get_latest_ollama_version_from_winget(timeout_sec: int = 60) -> str | None:
     if not winget:
         return None
     try:
-        result = subprocess.run(
+        result = _run_cli(
             [
                 winget,
                 "show",
@@ -139,10 +127,7 @@ def get_latest_ollama_version_from_winget(timeout_sec: int = 60) -> str | None:
                 "-e",
                 "--accept-source-agreements",
             ],
-            capture_output=True,
-            text=True,
-            timeout=timeout_sec,
-            check=False,
+            timeout_sec=timeout_sec,
         )
     except (OSError, subprocess.SubprocessError):
         return None
@@ -193,6 +178,18 @@ def _compare_versions(current: str, latest: str) -> int:
 
 def _version_parts(version: str) -> list[int]:
     return [int(part) for part in re.findall(r"\d+", version)]
+
+
+def _run_cli(command: list[str], timeout_sec: int) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        command,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=timeout_sec,
+        check=False,
+    )
 
 
 def _format_bytes(size: int) -> str:
@@ -259,13 +256,7 @@ def list_models_from_cli() -> list[str]:
     if not executable:
         return []
     try:
-        result = subprocess.run(
-            [executable, "list"],
-            capture_output=True,
-            text=True,
-            timeout=20,
-            check=False,
-        )
+        result = _run_cli([executable, "list"], timeout_sec=20)
     except (OSError, subprocess.SubprocessError):
         return []
     if result.returncode != 0:
@@ -406,7 +397,7 @@ def install_ollama_with_winget(timeout_sec: int = 900) -> bool:
     if not winget:
         return False
     try:
-        result = subprocess.run(
+        result = _run_cli(
             [
                 winget,
                 "install",
@@ -416,10 +407,7 @@ def install_ollama_with_winget(timeout_sec: int = 900) -> bool:
                 "--accept-source-agreements",
                 "--accept-package-agreements",
             ],
-            capture_output=True,
-            text=True,
-            timeout=timeout_sec,
-            check=False,
+            timeout_sec=timeout_sec,
         )
     except (OSError, subprocess.SubprocessError):
         return False
@@ -431,7 +419,7 @@ def upgrade_ollama_with_winget(timeout_sec: int = 900) -> bool:
     if not winget:
         return False
     try:
-        result = subprocess.run(
+        result = _run_cli(
             [
                 winget,
                 "upgrade",
@@ -441,10 +429,7 @@ def upgrade_ollama_with_winget(timeout_sec: int = 900) -> bool:
                 "--accept-source-agreements",
                 "--accept-package-agreements",
             ],
-            capture_output=True,
-            text=True,
-            timeout=timeout_sec,
-            check=False,
+            timeout_sec=timeout_sec,
         )
     except (OSError, subprocess.SubprocessError):
         return False
