@@ -6,7 +6,7 @@ import fitz
 import pytest
 from PIL import Image, ImageDraw
 
-from pdf2obsidian.core.converter import ConversionOptions, convert_file
+from pdf2obsidian.core.converter import ConversionOptions, convert_file, convert_files
 from pdf2obsidian.core.lecture.ai_summarizer import AIReconstructionResult
 
 
@@ -78,6 +78,35 @@ def test_pdf_webp_compression_creates_compressed_pdf_and_report(tmp_path):
 
     with fitz.open(compressed_pdf) as compressed:
         assert compressed.page_count == 1
+
+
+def test_convert_files_reports_pdf_page_progress(tmp_path):
+    pdf_path = tmp_path / "sample.pdf"
+    output_root = tmp_path / "output"
+
+    document = fitz.open()
+    for page_number in range(1, 4):
+        page = document.new_page(width=595, height=842)
+        page.insert_text((72, 72), f"Page {page_number}", fontsize=18)
+    document.save(pdf_path)
+    document.close()
+
+    logs: list[str] = []
+    progress_values: list[int] = []
+
+    def progress(done: int, count: int) -> None:
+        progress_values.append(int((done / count) * 100))
+
+    convert_files(
+        [pdf_path],
+        ConversionOptions(output_root=output_root),
+        log=logs.append,
+        progress=progress,
+    )
+
+    assert any(0 < value < 100 for value in progress_values)
+    assert progress_values[-1] == 100
+    assert any("Processing PDF page 1/3" in message for message in logs)
 
 
 def test_transcript_ollama_failure_raises_instead_of_fallback(tmp_path, monkeypatch):

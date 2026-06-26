@@ -30,6 +30,23 @@ if (-not $python) {
     throw "Python was not found. Install Python 3.11+ or activate a virtual environment first."
 }
 
-& $python -m PyInstaller --noconfirm --windowed --name PDF2Obsidian src/pdf2obsidian/main.py
+$promptData = Join-Path $PSScriptRoot "src\pdf2obsidian\prompts"
+
+& $python -m PyInstaller `
+    --noconfirm `
+    --windowed `
+    --name PDF2Obsidian `
+    --add-data "$promptData;pdf2obsidian\prompts" `
+    --exclude-module pandas `
+    --exclude-module pyarrow `
+    --exclude-module openpyxl `
+    --exclude-module IPython `
+    --exclude-module notebook `
+    --exclude-module jupyter `
+    --exclude-module pytest `
+    --exclude-module tkinter `
+    --exclude-module matplotlib `
+    --exclude-module scipy `
+    src/pdf2obsidian/main.py
 
 Write-Host "Build complete. Check the dist/PDF2Obsidian folder."

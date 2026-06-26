@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
 
 import fitz
 from PIL import Image
+
+PageProgressCallback = Callable[[int, int], None]
 
 
 @dataclass(frozen=True)
@@ -76,6 +79,7 @@ def compress_pdf_to_webp_pdf(
     output_dir: str | Path,
     quality: int = 75,
     dpi: int = 144,
+    progress: PageProgressCallback | None = None,
 ) -> PDFCompressionResult:
     source = Path(input_path)
     target_dir = Path(output_dir)
@@ -88,11 +92,14 @@ def compress_pdf_to_webp_pdf(
     output_document = fitz.open()
     try:
         with fitz.open(source) as document:
+            total_pages = max(document.page_count, 1)
             for page in document:
                 page_count += 1
                 image_bytes = _page_to_compressed_jpeg(page, quality=quality, dpi=dpi)
                 new_page = output_document.new_page(width=page.rect.width, height=page.rect.height)
                 new_page.insert_image(new_page.rect, stream=image_bytes)
+                if progress:
+                    progress(page_count, total_pages)
 
         output_document.save(output_path, garbage=4, deflate=True)
     finally:

@@ -64,19 +64,34 @@ def test_timeout_is_returned_as_user_friendly_message(monkeypatch):
 def test_pull_model_uses_no_external_api_key(monkeypatch):
     captured = {}
 
-    def fake_request(url, method="GET", payload=None, timeout=10):  # noqa: ANN001
+    def fake_request_stream(url, method="GET", payload=None, timeout=10):  # noqa: ANN001
         captured["url"] = url
         captured["payload"] = payload
         captured["timeout"] = timeout
-        return {"status": "success"}
+        yield {"status": "pulling manifest"}
+        yield {"status": "pulling blob", "completed": 50, "total": 100}
+        yield {"status": "success"}
 
-    monkeypatch.setattr(ollama_client, "_request_json", fake_request)
+    monkeypatch.setattr(ollama_client, "_request_json_stream", fake_request_stream)
+
+    messages = []
+    result = ollama_client.pull_model("qwen2.5:3b", progress=messages.append)
+
+    assert result["ok"] is True
+    assert captured["payload"] == {"name": "qwen2.5:3b", "stream": True}
+    assert "api_key" not in captured["payload"]
+    assert any("50%" in message for message in messages)
+
+
+def test_pull_model_returns_streamed_error(monkeypatch):
+    def fake_request_stream(*args, **kwargs):  # noqa: ANN002, ANN003
+        yield {"error": "not enough disk space"}
+
+    monkeypatch.setattr(ollama_client, "_request_json_stream", fake_request_stream)
 
     result = ollama_client.pull_model("qwen2.5:3b")
 
-    assert result["ok"] is True
-    assert captured["payload"] == {"name": "qwen2.5:3b", "stream": False}
-    assert "api_key" not in captured["payload"]
+    assert result == {"ok": False, "error": "not enough disk space"}
 
 
 def test_model_list_uses_cli_fallback(monkeypatch):
@@ -113,3 +128,19 @@ def test_select_best_available_model_chooses_larger_model_without_preference():
     models = ["qwen2.5:3b", "llama3.2:3b", "qwen3:14b"]
 
     assert ollama_client.select_best_available_model(models) == "qwen3:14b"
+
+
+def test_version_extraction_from_ollama_output():
+    assert ollama_client._extract_version("ollama version is 0.9.6") == "0.9.6"
+
+
+def test_winget_version_extraction_prefers_version_line():
+    text = "Name: Ollama\nVersion: 0.9.7\nPublisher: Ollama"
+
+    assert ollama_client._extract_winget_version(text) == "0.9.7"
+
+
+def test_version_compare_detects_update():
+    assert ollama_client._compare_versions("0.9.6", "0.10.0") < 0
+    assert ollama_client._compare_versions("0.10.0", "0.9.6") > 0
+    assert ollama_client._compare_versions("0.10.0", "0.10.0") == 0

@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from pdf2obsidian.core.ai.ollama_client import reconstruct_with_ollama
 from pdf2obsidian.core.lecture.prompt_loader import load_prompt
 from pdf2obsidian.core.transcript_processor import TranscriptBlock
+
+ProgressCallback = Callable[[int, str], None]
 
 PRESERVATION_CHECKS = [
     (
@@ -177,7 +180,17 @@ def reconstruct_blocks_with_ollama(
     output_language: str = "auto",
     base_url: str = "http://localhost:11434",
     max_chars: int = 6000,
+    progress: ProgressCallback | None = None,
 ) -> AIReconstructionResult:
+    last_progress = -1
+
+    def emit_progress(percent: int, message: str) -> None:
+        nonlocal last_progress
+        bounded = max(last_progress, min(100, max(0, percent)))
+        if progress and bounded > last_progress:
+            progress(bounded, message)
+            last_progress = bounded
+
     source_text = "\n\n".join(block.text for block in blocks if block.text.strip())
     if not source_text.strip():
         return AIReconstructionResult(
@@ -186,6 +199,7 @@ def reconstruct_blocks_with_ollama(
             warning="No transcript text was found.",
         )
 
+    emit_progress(5, "Preparing Ollama transcript reconstruction.")
     resolved_language = _resolve_output_language(output_language, source_text)
     template = _build_language_prompt(load_prompt("lecture_study_note_ko"), resolved_language)
     chunks = chunk_text(source_text, max_chars=max_chars)
@@ -194,10 +208,25 @@ def reconstruct_blocks_with_ollama(
         if len(chunks) > 1
         else template
     )
-    reconstructions = [
-        reconstruct_with_ollama(chunk, model=model, template=chunk_template, base_url=base_url)
-        for chunk in chunks
-    ]
+    reconstructions: list[str] = []
+    total_chunks = max(len(chunks), 1)
+    for chunk_index, chunk in enumerate(chunks, start=1):
+        emit_progress(
+            10 + int(((chunk_index - 1) / total_chunks) * 45),
+            f"Ollama chunk {chunk_index}/{total_chunks} started.",
+        )
+        reconstructions.append(
+            reconstruct_with_ollama(
+                chunk,
+                model=model,
+                template=chunk_template,
+                base_url=base_url,
+            )
+        )
+        emit_progress(
+            10 + int((chunk_index / total_chunks) * 45),
+            f"Ollama chunk {chunk_index}/{total_chunks} finished.",
+        )
 
     failed = [
         reconstruction
@@ -209,6 +238,7 @@ def reconstruct_blocks_with_ollama(
 
     combined = "\n\n".join(reconstructions)
     if len(reconstructions) > 1:
+        emit_progress(60, "Merging Ollama chunk notes.")
         final_prompt = _merge_reconstruction_prompt(template, resolved_language, source_text)
         combined = reconstruct_with_ollama(
             combined,
@@ -218,8 +248,10 @@ def reconstruct_blocks_with_ollama(
         )
         if combined.startswith("Ollama reconstruction failed:"):
             return AIReconstructionResult(markdown="", chunks=len(chunks), warning=combined)
+        emit_progress(70, "Ollama chunk merge finished.")
 
     if _has_language_mismatch(combined, resolved_language):
+        emit_progress(75, "Retrying Ollama reconstruction with language correction.")
         retry_prompt = _language_retry_prompt(template, resolved_language)
         combined = reconstruct_with_ollama(
             source_text,
@@ -239,7 +271,9 @@ def reconstruct_blocks_with_ollama(
                     "choose the output language explicitly."
                 ),
             )
+        emit_progress(80, "Ollama language correction finished.")
 
+    emit_progress(82, "Checking Ollama reconstruction quality.")
     markdown = _normalize_final_markdown(
         combined,
         title=title,
@@ -248,9 +282,13 @@ def reconstruct_blocks_with_ollama(
     )
 
     quality_issues = _final_quality_issues(markdown, source_text)
-    for _attempt in range(2):
+    for attempt_index in range(2):
         if not quality_issues:
             break
+        emit_progress(
+            85 + attempt_index * 4,
+            f"Ollama preservation retry {attempt_index + 1}/2 started.",
+        )
         retry_prompt = _preservation_retry_prompt(template, quality_issues, source_text)
         retry_input = _preservation_retry_input(
             markdown,
@@ -291,14 +329,20 @@ def reconstruct_blocks_with_ollama(
             source_file=source_file,
         )
         quality_issues = _final_quality_issues(markdown, source_text)
+        emit_progress(
+            88 + attempt_index * 4,
+            f"Ollama preservation retry {attempt_index + 1}/2 finished.",
+        )
 
     if quality_issues:
+        emit_progress(94, "Running Ollama section fallback reconstruction.")
         sectioned = _reconstruct_section_groups(
             source_text,
             model=model,
             base_template=template,
             resolved_language=resolved_language,
             base_url=base_url,
+            progress=emit_progress,
         )
         if sectioned.startswith("Ollama reconstruction failed:"):
             return AIReconstructionResult(markdown="", chunks=len(chunks), warning=sectioned)
@@ -333,6 +377,7 @@ def reconstruct_blocks_with_ollama(
             )
 
     markdown = _remove_lone_hash_lines(markdown)
+    emit_progress(100, "Ollama reconstruction finished.")
     return AIReconstructionResult(markdown=markdown, chunks=len(chunks))
 
 
@@ -503,6 +548,7 @@ def _reconstruct_section_groups(
     base_template: str,
     resolved_language: str,
     base_url: str,
+    progress: ProgressCallback | None = None,
 ) -> str:
     if resolved_language != "ko" or len(source_text) < 1000:
         return (
@@ -512,7 +558,13 @@ def _reconstruct_section_groups(
 
     prompts = _section_group_prompts(base_template)
     sections: list[str] = []
-    for prompt, start_marker, stop_markers in prompts:
+    total_prompts = max(len(prompts), 1)
+    for prompt_index, (prompt, start_marker, stop_markers) in enumerate(prompts, start=1):
+        if progress:
+            progress(
+                94 + int(((prompt_index - 1) / total_prompts) * 4),
+                f"Ollama section fallback {prompt_index}/{total_prompts} started.",
+            )
         section = reconstruct_with_ollama(
             source_text,
             model=model,
@@ -523,6 +575,11 @@ def _reconstruct_section_groups(
             return section
         content = _content_without_frontmatter(section)
         sections.append(_slice_markdown_range(content, start_marker, stop_markers))
+        if progress:
+            progress(
+                94 + int((prompt_index / total_prompts) * 4),
+                f"Ollama section fallback {prompt_index}/{total_prompts} finished.",
+            )
 
     return "\n\n".join(part.strip() for part in sections if part.strip())
 

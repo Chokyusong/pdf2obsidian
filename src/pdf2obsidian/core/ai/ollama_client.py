@@ -3,12 +3,14 @@ from __future__ import annotations
 import contextlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
 import time
 import urllib.error
 import urllib.request
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +23,7 @@ FALLBACK_MODELS = [
     "gemma3:4b",
 ]
 OLLAMA_DOWNLOAD_URL = "https://ollama.com/download/OllamaSetup.exe"
+OLLAMA_WINGET_ID = "Ollama.Ollama"
 
 
 def _url(base_url: str, path: str) -> str:
@@ -43,6 +46,26 @@ def _request_json(
     with urllib.request.urlopen(request, timeout=timeout) as response:
         raw = response.read().decode("utf-8")
     return json.loads(raw) if raw.strip() else {}
+
+
+def _request_json_stream(
+    url: str,
+    method: str = "GET",
+    payload: dict[str, Any] | None = None,
+    timeout: int = 10,
+) -> Iterator[dict[str, Any]]:
+    data = None
+    headers = {"Accept": "application/json"}
+    if payload is not None:
+        data = json.dumps(payload).encode("utf-8")
+        headers["Content-Type"] = "application/json"
+
+    request = urllib.request.Request(url, data=data, headers=headers, method=method)
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        for raw_line in response:
+            line = raw_line.decode("utf-8").strip()
+            if line:
+                yield json.loads(line)
 
 
 def is_ollama_running(base_url: str = DEFAULT_BASE_URL) -> bool:
@@ -83,6 +106,138 @@ def is_ollama_installed(base_url: str = DEFAULT_BASE_URL) -> bool:
             return True
         return result.returncode == 0 or bool(result.stdout.strip() or result.stderr.strip())
     return is_ollama_running(base_url)
+
+
+def get_ollama_version() -> str | None:
+    executable = get_ollama_executable_path()
+    if not executable:
+        return None
+    try:
+        result = subprocess.run(
+            [executable, "--version"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return _extract_version(f"{result.stdout}\n{result.stderr}")
+
+
+def get_latest_ollama_version_from_winget(timeout_sec: int = 60) -> str | None:
+    winget = shutil.which("winget")
+    if not winget:
+        return None
+    try:
+        result = subprocess.run(
+            [
+                winget,
+                "show",
+                "--id",
+                OLLAMA_WINGET_ID,
+                "-e",
+                "--accept-source-agreements",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=timeout_sec,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode != 0:
+        return None
+    return _extract_winget_version(f"{result.stdout}\n{result.stderr}")
+
+
+def check_ollama_update_status() -> dict[str, Any]:
+    installed_version = get_ollama_version()
+    latest_version = get_latest_ollama_version_from_winget()
+    update_available = False
+    if installed_version and latest_version:
+        update_available = _compare_versions(installed_version, latest_version) < 0
+    return {
+        "installed": is_ollama_installed(),
+        "installed_version": installed_version,
+        "latest_version": latest_version,
+        "update_available": update_available,
+    }
+
+
+def _extract_version(text: str) -> str | None:
+    match = re.search(r"\d+(?:\.\d+){1,3}", text)
+    return match.group(0) if match else None
+
+
+def _extract_winget_version(text: str) -> str | None:
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.lower().startswith("version:") or stripped.startswith("버전:"):
+            return _extract_version(stripped)
+    return _extract_version(text)
+
+
+def _compare_versions(current: str, latest: str) -> int:
+    current_parts = _version_parts(current)
+    latest_parts = _version_parts(latest)
+    max_len = max(len(current_parts), len(latest_parts))
+    current_parts.extend([0] * (max_len - len(current_parts)))
+    latest_parts.extend([0] * (max_len - len(latest_parts)))
+    if current_parts < latest_parts:
+        return -1
+    if current_parts > latest_parts:
+        return 1
+    return 0
+
+
+def _version_parts(version: str) -> list[int]:
+    return [int(part) for part in re.findall(r"\d+", version)]
+
+
+def _format_bytes(size: int) -> str:
+    value = float(max(size, 0))
+    units = ["B", "KB", "MB", "GB", "TB"]
+    for unit in units:
+        if value < 1024 or unit == units[-1]:
+            if unit == "B":
+                return f"{int(value)} {unit}"
+            return f"{value:.1f} {unit}"
+        value /= 1024
+    return f"{value:.1f} TB"
+
+
+def _pull_progress_percent(event: dict[str, Any]) -> int | None:
+    completed = event.get("completed")
+    total = event.get("total")
+    if (
+        not isinstance(completed, (int, float))
+        or not isinstance(total, (int, float))
+        or total <= 0
+    ):
+        return None
+    percent = int((completed / total) * 100)
+    return max(0, min(100, percent))
+
+
+def _format_pull_progress(event: dict[str, Any], model_name: str) -> str | None:
+    status = str(event.get("status") or "").strip()
+    percent = _pull_progress_percent(event)
+    completed = event.get("completed")
+    total = event.get("total")
+    if (
+        percent is not None
+        and isinstance(completed, (int, float))
+        and isinstance(total, (int, float))
+    ):
+        status_prefix = f"{status} " if status else ""
+        return (
+            f"{model_name}: {status_prefix}{percent}% "
+            f"({_format_bytes(int(completed))} / {_format_bytes(int(total))})"
+        )
+    if status:
+        return f"{model_name}: {status}"
+    return None
 
 
 def list_models_from_api(base_url: str = DEFAULT_BASE_URL) -> list[str]:
@@ -163,18 +318,44 @@ def _model_quality_score(model_name: str) -> tuple[float, int, str]:
     return (size, family_score, normalized)
 
 
-def pull_model(model_name: str, base_url: str = DEFAULT_BASE_URL) -> dict[str, Any]:
+def pull_model(
+    model_name: str,
+    base_url: str = DEFAULT_BASE_URL,
+    progress: Callable[[str], None] | None = None,
+) -> dict[str, Any]:
     if not model_name.strip():
         return {"ok": False, "error": "Choose an Ollama model name first."}
 
     try:
-        response = _request_json(
+        last_event: dict[str, Any] = {}
+        last_status: str | None = None
+        last_bucket: int | None = None
+        last_message: str | None = None
+        for event in _request_json_stream(
             _url(base_url, "/api/pull"),
             method="POST",
-            payload={"name": model_name, "stream": False},
+            payload={"name": model_name, "stream": True},
             timeout=600,
-        )
-        return {"ok": True, "response": response}
+        ):
+            last_event = event
+            if event.get("error"):
+                return {"ok": False, "error": str(event["error"])}
+            message = _format_pull_progress(event, model_name)
+            if progress and message:
+                status = str(event.get("status") or "")
+                percent = _pull_progress_percent(event)
+                bucket = percent // 5 if percent is not None else None
+                should_emit = (
+                    status != last_status
+                    or bucket != last_bucket
+                    or message != last_message
+                )
+                if should_emit:
+                    progress(message)
+                    last_status = status
+                    last_bucket = bucket
+                    last_message = message
+        return {"ok": True, "response": last_event}
     except TimeoutError:
         return {"ok": False, "error": "Ollama model download timed out."}
     except (OSError, urllib.error.URLError) as exc:
@@ -230,7 +411,7 @@ def install_ollama_with_winget(timeout_sec: int = 900) -> bool:
                 winget,
                 "install",
                 "--id",
-                "Ollama.Ollama",
+                OLLAMA_WINGET_ID,
                 "-e",
                 "--accept-source-agreements",
                 "--accept-package-agreements",
@@ -245,12 +426,79 @@ def install_ollama_with_winget(timeout_sec: int = 900) -> bool:
     return result.returncode == 0
 
 
-def download_ollama_installer(download_url: str = OLLAMA_DOWNLOAD_URL) -> str | None:
+def upgrade_ollama_with_winget(timeout_sec: int = 900) -> bool:
+    winget = shutil.which("winget")
+    if not winget:
+        return False
+    try:
+        result = subprocess.run(
+            [
+                winget,
+                "upgrade",
+                "--id",
+                OLLAMA_WINGET_ID,
+                "-e",
+                "--accept-source-agreements",
+                "--accept-package-agreements",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=timeout_sec,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return False
+    combined_output = f"{result.stdout}\n{result.stderr}".lower()
+    if result.returncode == 0:
+        return True
+    return "no available upgrade" in combined_output
+
+
+def download_ollama_installer(
+    download_url: str = OLLAMA_DOWNLOAD_URL,
+    progress: Callable[[str], None] | None = None,
+) -> str | None:
     installer_path = Path(tempfile.gettempdir()) / "OllamaSetup.exe"
     try:
         with urllib.request.urlopen(download_url, timeout=60) as response:
+            total_text = response.headers.get("Content-Length", "")
+            total = int(total_text) if total_text.isdigit() else 0
+            completed = 0
+            last_bucket = -1
             with installer_path.open("wb") as output:
-                shutil.copyfileobj(response, output)
+                while True:
+                    chunk = response.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    output.write(chunk)
+                    completed += len(chunk)
+                    if progress and total > 0:
+                        percent = max(0, min(100, int((completed / total) * 100)))
+                        bucket = percent // 5
+                        if bucket != last_bucket:
+                            progress(
+                                "Ollama installer download "
+                                f"{percent}% ({_format_bytes(completed)} / "
+                                f"{_format_bytes(total)})"
+                            )
+                            last_bucket = bucket
+                    elif progress and completed // (10 * 1024 * 1024) > last_bucket:
+                        progress(
+                            "Ollama installer download "
+                            f"({_format_bytes(completed)} received)"
+                        )
+                        last_bucket = completed // (10 * 1024 * 1024)
+            if progress:
+                if total > 0:
+                    progress(
+                        "Ollama installer download 100% "
+                        f"({_format_bytes(completed)} / {_format_bytes(total)})"
+                    )
+                else:
+                    progress(
+                        "Ollama installer download finished "
+                        f"({_format_bytes(completed)} received)"
+                    )
     except (OSError, urllib.error.URLError, TimeoutError):
         return None
     return str(installer_path) if installer_path.is_file() else None
@@ -284,7 +532,7 @@ def ensure_ollama_ready_and_model(
         installed = install_ollama_with_winget()
         if not installed:
             emit("winget installation failed. Downloading official Ollama installer.")
-            installer_path = download_ollama_installer()
+            installer_path = download_ollama_installer(progress=emit)
             if not installer_path:
                 return {"ok": False, "error": "Ollama installer download failed."}
             emit("Starting Ollama installer. Approve Windows permission prompts if shown.")
@@ -293,6 +541,23 @@ def ensure_ollama_ready_and_model(
         emit("Waiting for Ollama installation to become ready.")
         if not wait_for_ollama_ready(timeout_sec=300, base_url=base_url):
             return {"ok": False, "error": "Ollama was not ready after installation."}
+    else:
+        installed_version = get_ollama_version()
+        latest_version = get_latest_ollama_version_from_winget()
+        if installed_version:
+            emit(f"Installed Ollama version: {installed_version}")
+        if latest_version:
+            emit(f"Latest Ollama version from winget: {latest_version}")
+        if (
+            installed_version
+            and latest_version
+            and _compare_versions(installed_version, latest_version) < 0
+        ):
+            emit("Updating Ollama to the latest available version.")
+            if not upgrade_ollama_with_winget():
+                emit("Ollama update could not be completed with winget.")
+        elif latest_version:
+            emit("Ollama is already up to date.")
 
     if not is_ollama_running(base_url):
         emit("Starting Ollama server.")
@@ -309,7 +574,7 @@ def ensure_ollama_ready_and_model(
 
     if selected_model not in models:
         emit(f"Downloading Ollama model: {selected_model}")
-        pull_result = pull_model(selected_model, base_url=base_url)
+        pull_result = pull_model(selected_model, base_url=base_url, progress=emit)
         if not pull_result.get("ok"):
             return {
                 "ok": False,

@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import re
 import tempfile
+from collections.abc import Callable
 from dataclasses import dataclass
 from io import BytesIO, StringIO
 from pathlib import Path
@@ -11,6 +12,8 @@ import fitz
 from PIL import Image, ImageStat
 
 from pdf2obsidian.core import ocr
+
+PageProgressCallback = Callable[[int, int], None]
 
 
 @dataclass(frozen=True)
@@ -511,6 +514,7 @@ def process_pdf(
     assets_dir: str | Path,
     quality: int = 75,
     ocr_enabled: bool = False,
+    progress: PageProgressCallback | None = None,
 ) -> PDFDocumentResult:
     source = Path(input_path)
     assets = Path(assets_dir)
@@ -520,6 +524,7 @@ def process_pdf(
     saved_xrefs: dict[int, PDFImageResult] = {}
 
     with fitz.open(source) as document:
+        total_pages = max(document.page_count, 1)
         for page_index, page in enumerate(document, start=1):
             page_asset_name = None
             tables, table_bboxes = _extract_tables(page, page_index, assets, quality)
@@ -586,6 +591,8 @@ def process_pdf(
                     ocr_warning=warning,
                 )
             )
+            if progress:
+                progress(page_index, total_pages)
 
     asset_size_bytes = sum(path.stat().st_size for path in assets.glob("*.webp"))
     return PDFDocumentResult(

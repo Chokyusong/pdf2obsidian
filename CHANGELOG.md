@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.3 - 2026-06-26
+
 ### Added
 
 - Fixed lecture study note template documentation.
@@ -14,6 +16,13 @@
 - Output Language option for transcript notes: same as source, Korean, or English.
 - Strengthened Local AI prompt to preserve source information and generate lecture reconstruction Markdown instead of a shortened note.
 - Added creator information to the license, package metadata, README files, GUI footer, and CLI version output.
+- Ollama installer and model download progress in the GUI status area, log, and progress bar.
+- Real-time conversion progress for PDF pages, PDF compression pages, transcript stages, and Ollama reconstruction chunks.
+
+### Changed
+
+- GUI now opens in a wider two-row dashboard layout with Input, Conversion, and AI settings on the first row.
+- Run status and log are shown on the second row, with the log visible by default.
 
 ## 0.1.2 - 2026-06-26
 
