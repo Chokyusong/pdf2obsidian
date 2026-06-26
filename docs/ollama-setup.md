@@ -17,15 +17,18 @@ When used with PDF2Obsidian:
 
 Local AI output is saved as the final Markdown returned by Ollama. PDF2Obsidian does not wrap the AI result in a second template.
 
-## Step 1. Install Ollama
+## Step 1. Automatic Setup
 
-1. Open the official download page:
-   <https://ollama.com/download>
-2. Download the Windows installer.
-3. Run the installer.
-4. Start Ollama from the Windows Start menu.
+1. Open PDF2Obsidian.
+2. Set `AI Mode` to `Local AI (Ollama)`.
+3. Click `Auto Install Ollama`.
+4. Confirm the setup message.
+5. If Windows shows a permission prompt, approve it.
+6. Wait while Ollama and the selected model are installed.
 
-PDF2Obsidian does not install Ollama automatically.
+PDF2Obsidian first tries `winget`. If that fails, it downloads and runs the official Ollama installer.
+
+Automatic setup starts only after the user clicks the setup button and confirms the prompt.
 
 ## Step 2. Check Ollama in PDF2Obsidian
 
@@ -41,28 +44,29 @@ Running
 
 If it says `Not detected`, start Ollama from the Windows Start menu and try again.
 
-## Step 3. Choose a Model
+## Step 3. Choose or Refresh a Model
 
-Recommended beginner model:
+PDF2Obsidian reads installed Ollama models automatically from your PC.
+
+Click:
 
 ```text
-qwen2.5:3b
+Refresh Models
 ```
 
-Other options:
+Recommended model:
 
 ```text
-llama3.2:3b
 qwen2.5:7b
 ```
 
-Use `qwen2.5:3b` first. It is smaller and easier to test.
+Use `qwen2.5:7b` for better lecture reconstruction quality. Use `qwen2.5:3b` only when your PC is slow or memory is limited.
 
 ## Step 4. Download a Model
 
 In PDF2Obsidian:
 
-1. Choose `qwen2.5:3b` in the model box.
+1. Choose a model in the model box, or type a model name directly.
 2. Click `Pull Model`.
 3. Wait until the download finishes.
 
@@ -76,6 +80,16 @@ Model downloads can take time. Larger models need more disk space.
 4. Click `Start conversion`.
 
 If Ollama is not running or the selected model is unavailable, conversion stops and shows an error. It does not silently fall back to `Basic (No AI)`.
+
+## Manual Install Fallback
+
+If automatic setup fails:
+
+1. Click `Open Manual Install Page`.
+2. Download Ollama from <https://ollama.com/download>.
+3. Run the installer.
+4. Start Ollama.
+5. Return to PDF2Obsidian and click `Check Ollama`.
 
 ## Optional: Store Models on HDD
 

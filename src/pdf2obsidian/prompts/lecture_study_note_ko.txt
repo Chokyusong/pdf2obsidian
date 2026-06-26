@@ -1,5 +1,39 @@
 You are reconstructing lecture subtitles or transcripts into a high-quality Obsidian Markdown study material.
 
+For Korean sources, follow this Korean instruction first:
+
+너의 작업은 요약이 아니다.
+입력된 강의 자막을 최대한 보존하면서 Obsidian용 Markdown 학습자료로 재구성한다.
+생성 결과는 강의를 보지 않은 사람이 이 문서만 읽어도 강의 전체를 이해하고 실행할 수 있는 "강의 대체 학습자료"여야 한다.
+짧은 개요가 아니라 개념, 이유, 예시, 숫자, 실행 절차, 미션을 충분히 풀어 쓴 원고형 학습자료로 작성한다.
+반복 문장, 인사말, 광고성 문구, 의미 없는 추임새만 제거한다.
+원문에 없는 내용을 임의로 추가하지 않는다.
+원문 내용을 과도하게 압축하지 않는다.
+누락된 항목을 `원문 보존 보강`, `품질 검증`, `추가 보강` 같은 별도 섹션으로 붙이지 않는다.
+모든 중요한 내용은 아래 고정 Markdown 구조의 관련 본문 섹션 안에 자연스럽게 통합한다.
+최종 Markdown은 0번부터 12번 섹션까지만 사용한다.
+13번 섹션, 추가 정보 섹션, 원문 보존 보강 섹션, 품질 검증 섹션을 만들지 않는다.
+
+원문에 해당 내용이 있으면 아래 표현을 최종 Markdown 본문에 반드시 포함한다.
+
+- RAS 시스템
+- 쇼츠/SNS로 인한 정보 과부하
+- 100번 쓰기
+- 독서와 글쓰기
+- 독서모임
+- 서평
+- 매일 1% 성장
+- 무의식 해킹의 법칙 4단계
+- 유튜브 채널 새로 만들기
+- 관심 주제 채널 20~30개 구독
+- 많게는 100개 채널 구독
+- 1~2일간 관련 영상만 시청
+- 최소 60일 이상 환경 유지
+- 멘토 레버리지
+- 멘토 내용을 그대로 따라야 하는 이유
+- 내 생각 추가 금지
+- 최종 미션
+
 Your task is not creating a shortened version.
 Your task is lecture reconstruction.
 
@@ -7,6 +41,7 @@ Preserve as much useful source information as possible while turning the transcr
 A learner should understand the full lecture flow, concepts, examples, reasons, actions, and missions without watching the video again.
 The Markdown should be easier to understand than the original lecture because it reorganizes spoken content into clear learning material.
 It should explain implicit connections, clarify the order of ideas, and make actions easier to follow while staying faithful to the source.
+The final Markdown should read like a complete study chapter or lecture manuscript, not a bullet-only recap.
 
 Do not extract only key points.
 Do not over-compress the lecture.
@@ -48,6 +83,9 @@ Keep all major topics from the source.
 Keep examples whenever possible.
 Keep all numbers and concrete details.
 Keep missions and action steps.
+Do not create a "quality checklist" section in the final Markdown.
+Do not create a "source preservation addendum" section in the final Markdown.
+Do not add any sections after "## 12. 다음 액션".
 
 If the source contains any of these topics, they must appear in the final Markdown:
 - RAS system or brain navigation
@@ -206,18 +244,6 @@ tags:
 - [ ]
 - [ ]
 - [ ]
-
----
-
-## 품질 검증
-
-- [ ] 강의를 보지 않아도 이해 가능한가?
-- [ ] 핵심 개념이 모두 포함되었는가?
-- [ ] 강의 예시가 포함되었는가?
-- [ ] 숫자 데이터가 유지되었는가?
-- [ ] 실행 방법이 포함되었는가?
-- [ ] 미션이 포함되었는가?
-- [ ] 원본 대비 과도하게 압축되지 않았는가?
 
 Write in beginner-friendly language.
 Use concept -> explanation -> example -> application.

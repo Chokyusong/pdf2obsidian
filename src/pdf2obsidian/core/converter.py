@@ -50,7 +50,7 @@ class ConversionOptions:
     transcript_ai_mode: str = DEFAULT_AI_MODE
     transcript_output_mode: str = DEFAULT_OUTPUT_MODE
     transcript_output_language: str = "auto"
-    ollama_model: str = "qwen2.5:3b"
+    ollama_model: str = "qwen2.5:7b"
     ollama_base_url: str = "http://localhost:11434"
     transcript_keep_timestamps: bool = True
     transcript_review_questions: bool = True

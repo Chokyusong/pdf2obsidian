@@ -20,7 +20,14 @@ PDF2Obsidian is a local-first open-source desktop tool for Obsidian users and le
 
 It is designed for Windows users who want to keep their files on their own computer. The app does not upload files to a server and does not use external AI APIs such as OpenAI, Claude, or Gemini.
 
-![PDF2Obsidian GUI with sample PDF loaded](docs/assets/gui-sample-course-loaded.png)
+![PDF2Obsidian GUI with sample PDF and lecture subtitle loaded](docs/assets/gui-sample-files-loaded.png)
+
+## Download
+
+The latest Windows build is available from GitHub Releases:
+
+- [PDF2Obsidian v0.1.2](https://github.com/Chokyusong/pdf2obsidian/releases/tag/v0.1.2)
+- [Download Windows ZIP](https://github.com/Chokyusong/pdf2obsidian/releases/download/v0.1.2/PDF2Obsidian-v0.1.2-windows.zip)
 
 ## Project Goal
 
@@ -198,13 +205,27 @@ Output Language controls the language of transcript notes:
 - `Korean`: translate or rewrite the result in Korean.
 - `English`: translate or rewrite the result in English.
 
-PDF2Obsidian does not require cloud AI. Files stay on the local machine in Basic mode and when using a local Ollama server. Ollama must be installed separately for now; the app does not silently install Ollama or download models.
+PDF2Obsidian does not require cloud AI. Files stay on the local machine in Basic mode and when using a local Ollama server. Ollama setup is optional and starts only after the user explicitly clicks the Ollama setup or model pull buttons.
 
 Recommended Ollama models:
 
+- `qwen2.5:7b` when Korean lecture quality matters more than speed.
 - `qwen2.5:3b` for lightweight testing.
 - `llama3.2:3b` for general testing.
-- `qwen2.5:7b` when Korean lecture quality matters more than speed.
+
+## Local AI(Ollama) Automatic Setup
+
+PDF2Obsidian supports assisted Ollama setup for Local AI mode.
+
+After choosing `Local AI (Ollama)`, click `Auto Install Ollama` to run:
+
+1. Ollama installation check
+2. Ollama automatic installation
+3. Ollama server check/start
+4. Recommended or selected model download
+5. Local AI mode activation
+
+The model selector reads installed Ollama models dynamically from the local Ollama API, with an `ollama list` CLI fallback. If automatic setup fails, use `Open Manual Install Page` and continue with the manual setup guide.
 
 ## Lecture Study Note Template
 
@@ -227,9 +248,7 @@ Demo inputs:
 
 Desktop workflow:
 
-![PDF sample loaded in PDF2Obsidian](docs/assets/gui-sample-course-loaded.png)
-
-![Lecture subtitle sample loaded in PDF2Obsidian](docs/assets/gui-sample-lecture-loaded.png)
+![Sample PDF and lecture subtitle loaded in PDF2Obsidian](docs/assets/gui-sample-files-loaded.png)
 
 ### PDF to Obsidian Markdown
 

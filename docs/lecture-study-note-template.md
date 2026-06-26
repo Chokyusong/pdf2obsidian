@@ -169,7 +169,7 @@ tags:
 - [ ]
 ```
 
-## Quality Checklist
+## Internal Review Criteria
 
 - Can someone understand the lecture without watching the original video?
 - Are key concepts included?

@@ -20,7 +20,14 @@ PDF2Obsidian은 Obsidian 사용자와 학습자료 관리자를 위한 local-fir
 
 사용자의 파일을 외부 서버로 업로드하지 않으며, OpenAI, Claude, Gemini 같은 외부 AI API를 필수로 사용하지 않습니다. Windows 사용자가 로컬에서 쉽게 실행하는 것을 1차 목표로 합니다.
 
-![PDF2Obsidian GUI with sample PDF loaded](docs/assets/gui-sample-course-loaded.png)
+![PDF2Obsidian GUI with sample PDF and lecture subtitle loaded](docs/assets/gui-sample-files-loaded.png)
+
+## 다운로드
+
+최신 Windows 빌드는 GitHub Releases에서 받을 수 있습니다.
+
+- [PDF2Obsidian v0.1.2](https://github.com/Chokyusong/pdf2obsidian/releases/tag/v0.1.2)
+- [Windows ZIP 다운로드](https://github.com/Chokyusong/pdf2obsidian/releases/download/v0.1.2/PDF2Obsidian-v0.1.2-windows.zip)
 
 ## 프로젝트 목표
 
@@ -198,13 +205,27 @@ Output Language는 자막 노트의 출력 언어를 정합니다.
 - `한국어`: 영어 자막도 한국어 학습 노트로 재구성
 - `영어`: 한국어 자막도 영어 학습 노트로 재구성
 
-PDF2Obsidian은 클라우드 AI를 요구하지 않습니다. Basic 모드와 로컬 Ollama 모드에서는 파일이 사용자의 PC 안에서 처리됩니다. 현재 Ollama는 사용자가 직접 설치해야 하며, 앱이 자동 설치하거나 사용자 동의 없이 모델을 다운로드하지 않습니다.
+PDF2Obsidian은 클라우드 AI를 요구하지 않습니다. Basic 모드와 로컬 Ollama 모드에서는 파일이 사용자의 PC 안에서 처리됩니다. Ollama 설정과 모델 다운로드는 선택 기능이며, 사용자가 `Local AI (Ollama)`를 선택하고 설치/모델 버튼을 직접 누른 뒤 확인했을 때만 실행됩니다.
 
 추천 Ollama 모델:
 
+- `qwen2.5:7b`: 한국어 강의 정리 품질 우선
 - `qwen2.5:3b`: 가벼운 테스트용
 - `llama3.2:3b`: 일반 테스트용
-- `qwen2.5:7b`: 한국어 강의 정리 품질 우선
+
+## Local AI(Ollama) 자동 설정
+
+PDF2Obsidian은 Local AI 모드를 위한 Ollama 설정 보조 기능을 제공합니다.
+
+`Local AI (Ollama)`를 선택한 뒤 `Ollama 자동 설치`를 누르면 다음 흐름을 진행합니다.
+
+1. Ollama 설치 여부 확인
+2. Ollama 자동 설치
+3. Ollama 서버 확인/시작
+4. 추천 또는 선택 모델 다운로드
+5. Local AI 모드 활성화
+
+모델 선택기는 로컬 Ollama API를 통해 설치된 모델을 읽고, 실패하면 `ollama list` CLI fallback을 사용합니다. 자동 설정이 실패하면 `다운로드 페이지 열기`와 수동 설정 가이드를 사용하면 됩니다.
 
 ## Lecture Study Note Template
 
@@ -227,9 +248,7 @@ Ollama 설치와 사용 순서는 [Ollama Setup Guide](docs/ollama-setup.md)를 
 
 데스크톱 사용 흐름:
 
-![PDF sample loaded in PDF2Obsidian](docs/assets/gui-sample-course-loaded.png)
-
-![Lecture subtitle sample loaded in PDF2Obsidian](docs/assets/gui-sample-lecture-loaded.png)
+![Sample PDF and lecture subtitle loaded in PDF2Obsidian](docs/assets/gui-sample-files-loaded.png)
 
 ### PDF to Obsidian Markdown
 
