@@ -62,6 +62,15 @@ qwen2.5:7b
 
 Use `qwen2.5:7b` for better lecture reconstruction quality. Use `qwen2.5:3b` only when your PC is slow or memory is limited.
 
+Ollama runs locally for free after installation, but conversion speed and output
+quality depend on the selected model and the user's hardware. PDF2Obsidian's
+default Local AI conversion saves the first cleaned result instead of running
+slow repeated retries.
+
+Large experimental models such as `qwen3.6` are not recommended for most users.
+They can require much more memory and may be slow or unstable during repeated
+lecture reconstruction.
+
 ## Step 4. Download a Model
 
 In PDF2Obsidian:

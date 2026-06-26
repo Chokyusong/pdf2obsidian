@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+## 0.1.5 - 2026-06-27
+
+### Added
+
+- Added timestamps to GUI log messages.
+- Added prompt-leak cleanup for Ollama output before saving Markdown.
+- Added tests for prompt-leak cleanup, wiki-link cleanup, thinking-trace cleanup, and v1.1 heading rules.
+
+### Changed
+
+- Changed default Local AI(Ollama) transcript conversion to a one-shot flow with light post-processing instead of slow repeated quality retry and section fallback reconstruction.
+- Increased default Ollama transcript chunk size so typical lecture transcripts can be handled in one request.
+- Kept `qwen2.5:7b` as the recommended practical Ollama model and documented `qwen3.6` as a large experimental model.
+- Updated Ollama documentation to explain that local execution is free after installation, but speed and quality depend on the model and PC hardware.
+- Updated release links to v0.1.5.
+
+### Fixed
+
+- Fixed leaked prompt headings such as `PRIMARY GOAL`, `OUTPUT LANGUAGE`, and `FIXED MARKDOWN STRUCTURE` appearing before the actual lecture note.
+- Fixed generated Obsidian wiki links and thinking/reasoning traces being retained in final Ollama Markdown.
+
 ## 0.1.4 - 2026-06-27
 
 ### Changed

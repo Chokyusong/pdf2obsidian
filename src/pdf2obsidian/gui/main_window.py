@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QSettings, Qt, QThread, QUrl, Signal
+from PySide6.QtCore import QDateTime, QSettings, Qt, QThread, QUrl, Signal
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -17,7 +17,6 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QProgressBar,
     QPushButton,
-    QScrollArea,
     QSizePolicy,
     QTextEdit,
     QVBoxLayout,
@@ -27,7 +26,7 @@ from PySide6.QtWidgets import (
 from pdf2obsidian.core.ai.ollama_client import (
     DEFAULT_BASE_URL,
     DEFAULT_RECOMMENDED_MODEL,
-    FALLBACK_MODELS,
+    check_ollama_update_status,
     ensure_ollama_ready_and_model,
     is_ollama_installed,
     is_ollama_running,
@@ -41,17 +40,13 @@ from pdf2obsidian.utils.paths import is_supported
 
 APP_STYLE = """
 QMainWindow,
-QScrollArea,
 QWidget {
     background: #0f141a;
     color: #f3f5f7;
-    font-size: 13px;
-}
-QScrollArea {
-    border: none;
+    font-size: 12px;
 }
 QLabel#appTitle {
-    font-size: 24px;
+    font-size: 21px;
     font-weight: 700;
 }
 QLabel#appSubtitle,
@@ -64,9 +59,9 @@ QLabel#logoBadge {
     border: 1px solid #33465a;
     border-radius: 8px;
     color: #f3f5f7;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
-    padding: 12px 10px;
+    padding: 8px 9px;
 }
 QFrame#inputCard,
 QFrame#conversionCard,
@@ -91,22 +86,22 @@ QFrame#runCard {
 }
 QLabel#inputTitle {
     color: #58a6ff;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
 }
 QLabel#conversionTitle {
     color: #57d16d;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
 }
 QLabel#aiTitle {
     color: #fb923c;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
 }
 QLabel#runTitle {
     color: #a78bfa;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
 }
 QLabel#numberBadge {
@@ -128,7 +123,7 @@ QLabel#hintBox {
     background: #11161c;
     border: 1px solid #303a45;
     border-radius: 6px;
-    padding: 8px;
+    padding: 6px;
 }
 QLabel#hintBox {
     color: #c9d1d9;
@@ -143,21 +138,21 @@ QComboBox {
     border: 1px solid #303a45;
     border-radius: 6px;
     color: #f3f5f7;
-    padding: 6px;
+    padding: 4px 6px;
 }
 QListWidget::item {
-    padding: 5px;
+    padding: 3px;
 }
 QComboBox::drop-down {
     border: none;
-    width: 28px;
+    width: 24px;
 }
 QPushButton {
     background: #1c232c;
     border: 1px solid #374151;
     border-radius: 6px;
     color: #f3f5f7;
-    padding: 8px 12px;
+    padding: 5px 7px;
 }
 QPushButton:hover {
     background: #263241;
@@ -170,9 +165,9 @@ QPushButton:disabled {
 QPushButton#primaryButton {
     background: #6d28d9;
     border-color: #8b5cf6;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
-    min-height: 38px;
+    min-height: 32px;
 }
 QPushButton#primaryButton:hover {
     background: #7c3aed;
@@ -213,7 +208,7 @@ TRANSLATIONS = {
         "run_status_title": "4. Run / Status",
         "files": "Files",
         "select_files": "Select files",
-        "remove_selected": "Remove selected",
+        "remove_selected": "Remove",
         "clear": "Clear",
         "output_folder": "Output folder",
         "output_folder_hint": "Choose where converted files will be saved.",
@@ -254,7 +249,9 @@ TRANSLATIONS = {
         "ollama_model": "Model",
         "ollama_endpoint": "Endpoint",
         "installed_models": "Installed",
+        "no_installed_models_choice": "No installed models detected",
         "check_ollama": "Check Ollama",
+        "check_ollama_latest": "Check Latest Version",
         "ollama_auto_install": "Auto Install Ollama",
         "refresh_ollama_models": "Refresh Models",
         "ollama_setup_guide": "Ollama Setup Guide",
@@ -274,21 +271,33 @@ TRANSLATIONS = {
         ),
         "ollama_setup_started": "Ollama automatic setup started.",
         "ollama_setup_finished": "Ollama automatic setup finished: {message}",
+        "ollama_version_check_started": "Checking Ollama latest version.",
+        "ollama_version_check_result": (
+            "Ollama version: installed={installed}, latest={latest}, update={update}"
+        ),
+        "ollama_model_required_title": "No installed Ollama model",
+        "ollama_model_required_message": (
+            "Refresh installed models or pull the recommended model before conversion."
+        ),
         "ollama_guide_title": "Ollama setup guide",
         "ollama_guide_text": (
             "PDF2Obsidian works without Ollama.\n\n"
             "Use Ollama only when you choose Local AI (Ollama).\n\n"
             "Recommended beginner steps:\n"
             "1. Click Auto Install Ollama.\n"
-            "2. Wait while Ollama and the selected model are installed.\n"
+            "2. Use qwen2.5:7b unless you are only testing.\n"
             "3. If automatic setup fails, click Open Download Page.\n"
             "4. Add a transcript file, choose Local AI (Ollama), "
             "choose Lecture Reconstruction MD, then start conversion.\n\n"
+            "qwen3.6 is a large experimental option and may be slow or unstable "
+            "on ordinary PCs.\n\n"
             "If Ollama is not detected, start Ollama and click Check Ollama again.\n"
             "Model files can be stored on another drive by setting OLLAMA_MODELS."
         ),
         "ai_basic_status": "Basic local rule-based mode. No AI, model, or internet is required.",
-        "ai_ollama_status": "Local AI mode uses your local Ollama server only after you choose it.",
+        "ai_ollama_status": (
+            "Local AI uses Ollama locally. Recommended model: qwen2.5:7b."
+        ),
         "ai_cloud_status": "Reserved for a future optional cloud AI mode. Not implemented.",
         "ollama_hint": (
             "Auto Install runs only after you click the button and confirm the setup prompt."
@@ -297,6 +306,7 @@ TRANSLATIONS = {
         "status": "Status",
         "status_ready": "Ready.",
         "status_running": "Conversion is running.",
+        "status_conversion_progress": "Conversion progress: {percent}%",
         "status_finished": "Conversion finished. Output folder is ready.",
         "status_failed": "Conversion failed. Open the log for details.",
         "status_ollama_setup": "Ollama setup is running.",
@@ -343,7 +353,7 @@ TRANSLATIONS = {
         "run_status_title": "4. Run / Status",
         "files": "파일",
         "select_files": "파일 선택",
-        "remove_selected": "선택 항목 제거",
+        "remove_selected": "선택 제거",
         "clear": "전체 지우기",
         "output_folder": "출력 폴더",
         "output_folder_hint": "변환된 파일이 저장될 폴더를 선택하세요.",
@@ -384,7 +394,9 @@ TRANSLATIONS = {
         "ollama_model": "모델",
         "ollama_endpoint": "Endpoint",
         "installed_models": "설치된 모델",
+        "no_installed_models_choice": "설치된 모델 없음",
         "check_ollama": "Ollama 확인",
+        "check_ollama_latest": "최신 버전 확인",
         "ollama_auto_install": "Ollama 자동 설치",
         "refresh_ollama_models": "모델 새로고침",
         "ollama_setup_guide": "Ollama 설정 가이드",
@@ -404,27 +416,37 @@ TRANSLATIONS = {
         ),
         "ollama_setup_started": "Ollama 자동 설치를 시작합니다.",
         "ollama_setup_finished": "Ollama 자동 설치 완료: {message}",
+        "ollama_version_check_started": "Ollama 최신 버전을 확인합니다.",
+        "ollama_version_check_result": (
+            "Ollama 버전: 설치됨={installed}, 최신={latest}, 업데이트={update}"
+        ),
+        "ollama_model_required_title": "설치된 Ollama 모델 없음",
+        "ollama_model_required_message": (
+            "변환 전에 설치 모델을 새로고침하거나 추천 모델을 Pull 하세요."
+        ),
         "ollama_guide_title": "Ollama 설정 가이드",
         "ollama_guide_text": (
             "PDF2Obsidian은 Ollama 없이도 동작합니다.\n\n"
             "Ollama는 Local AI (Ollama)를 선택할 때만 필요합니다.\n\n"
             "초보자용 순서:\n"
             "1. Ollama 자동 설치를 누릅니다.\n"
-            "2. Ollama와 선택 모델 설치가 끝날 때까지 기다립니다.\n"
+            "2. 일반 사용자는 qwen2.5:7b를 사용합니다.\n"
             "3. 자동 설치가 실패하면 다운로드 페이지 열기를 누릅니다.\n"
             "4. 자막 파일을 추가하고 AI Mode를 Local AI (Ollama), "
             "Output Mode를 강의 재구성 MD로 둔 뒤 변환을 시작합니다.\n\n"
+            "qwen3.6은 큰 실험용 모델이라 일반 PC에서는 느리거나 불안정할 수 있습니다.\n\n"
             "Ollama가 감지되지 않으면 Ollama를 실행한 뒤 다시 확인하세요.\n"
             "모델 파일은 OLLAMA_MODELS 환경 변수로 다른 드라이브에 저장할 수 있습니다."
         ),
         "ai_basic_status": "로컬 규칙 기반 모드입니다. AI, 모델, 인터넷이 필요 없습니다.",
-        "ai_ollama_status": "Local AI는 사용자가 선택했을 때만 로컬 Ollama 서버를 사용합니다.",
+        "ai_ollama_status": "Local AI는 로컬 Ollama를 사용합니다. 추천 모델: qwen2.5:7b.",
         "ai_cloud_status": "향후 선택형 Cloud AI를 위한 예약 옵션입니다. 아직 구현되지 않았습니다.",
         "ollama_hint": "자동 설치는 사용자가 버튼을 누르고 확인했을 때만 실행됩니다.",
         "progress": "진행률",
         "status": "상태",
         "status_ready": "대기 중입니다.",
         "status_running": "변환 중입니다.",
+        "status_conversion_progress": "변환 진행률: {percent}%",
         "status_finished": "변환이 완료되었습니다. 출력 폴더를 열 수 있습니다.",
         "status_failed": "변환에 실패했습니다. 로그를 확인하세요.",
         "status_ollama_setup": "Ollama 설정을 진행 중입니다.",
@@ -463,6 +485,7 @@ TRANSLATIONS = {
 
 
 class OllamaPullWorker(QThread):
+    progress_message = Signal(str)
     finished_message = Signal(str)
 
     def __init__(self, model: str) -> None:
@@ -470,7 +493,7 @@ class OllamaPullWorker(QThread):
         self.model = model
 
     def run(self) -> None:
-        result = pull_model(self.model)
+        result = pull_model(self.model, progress=self.progress_message.emit)
         if result.get("ok"):
             self.finished_message.emit("ok")
         else:
@@ -492,6 +515,13 @@ class OllamaSetupWorker(QThread):
             self.finished_setup.emit(True, model, "ok")
         else:
             self.finished_setup.emit(False, self.model, str(result.get("error", "unknown error")))
+
+
+class OllamaVersionCheckWorker(QThread):
+    finished_check = Signal(dict)
+
+    def run(self) -> None:
+        self.finished_check.emit(check_ollama_update_status())
 
 
 class DropListWidget(QListWidget):
@@ -560,18 +590,20 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("PDF2Obsidian")
-        self.resize(1180, 760)
+        self.resize(1200, 720)
+        self.setMinimumSize(1100, 650)
         self.setStyleSheet(APP_STYLE)
         self.settings = QSettings("PDF2Obsidian", "PDF2Obsidian")
         self.worker: ConversionWorker | None = None
         self.ollama_setup_worker: OllamaSetupWorker | None = None
+        self.ollama_version_check_worker: OllamaVersionCheckWorker | None = None
         self.last_output_folder = Path.cwd() / "output"
         self.language = "en"
-        self.log_expanded = False
+        self.log_expanded = True
 
         self.file_list = DropListWidget()
         self.file_list.files_dropped.connect(self.add_files)
-        self.file_list.setMinimumHeight(150)
+        self.file_list.setMinimumHeight(92)
 
         self.language_combo = QComboBox()
         self.language_combo.addItem("English", "en")
@@ -613,12 +645,11 @@ class MainWindow(QMainWindow):
         )
         self.ollama_installed_models_value.setWordWrap(True)
         self.ollama_model_combo = QComboBox()
-        self.ollama_model_combo.setEditable(True)
-        self.ollama_model_combo.addItems(FALLBACK_MODELS)
-        saved_model = str(self.settings.value("ollama_model", DEFAULT_RECOMMENDED_MODEL))
-        self.ollama_model_combo.setCurrentText(saved_model)
+        self.ollama_model_combo.setEditable(False)
         self.ollama_check_button = QPushButton()
         self.ollama_check_button.clicked.connect(self.check_ollama_status)
+        self.ollama_latest_check_button = QPushButton()
+        self.ollama_latest_check_button.clicked.connect(self.check_ollama_latest_version)
         self.ollama_auto_install_button = QPushButton()
         self.ollama_auto_install_button.clicked.connect(self.start_ollama_auto_install)
         self.ollama_refresh_models_button = QPushButton()
@@ -632,11 +663,11 @@ class MainWindow(QMainWindow):
         self.ollama_pull_worker: OllamaPullWorker | None = None
 
         self.keep_timestamps_checkbox = QCheckBox()
-        self.keep_timestamps_checkbox.setChecked(True)
+        self.keep_timestamps_checkbox.setChecked(False)
         self.review_questions_checkbox = QCheckBox()
-        self.review_questions_checkbox.setChecked(True)
+        self.review_questions_checkbox.setChecked(False)
         self.checklist_checkbox = QCheckBox()
-        self.checklist_checkbox.setChecked(True)
+        self.checklist_checkbox.setChecked(False)
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
@@ -648,7 +679,8 @@ class MainWindow(QMainWindow):
 
         self.log_area = QTextEdit()
         self.log_area.setReadOnly(True)
-        self.log_area.setMinimumHeight(110)
+        self.log_area.setMinimumHeight(84)
+        self.log_area.setMaximumHeight(150)
 
         self.open_output_button = QPushButton()
         self.open_output_button.setEnabled(False)
@@ -671,15 +703,21 @@ class MainWindow(QMainWindow):
         self.remove_button.clicked.connect(self.remove_selected_files)
         self.clear_button = QPushButton()
         self.clear_button.clicked.connect(self.file_list.clear)
+        for button in (self.add_files_button, self.remove_button, self.clear_button):
+            button.setMinimumWidth(0)
+            button.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
 
-        file_buttons = QHBoxLayout()
-        file_buttons.addWidget(self.add_files_button)
-        file_buttons.addWidget(self.remove_button)
-        file_buttons.addWidget(self.clear_button)
+        file_buttons = QGridLayout()
+        file_buttons.setHorizontalSpacing(8)
+        file_buttons.setVerticalSpacing(6)
+        file_buttons.addWidget(self.add_files_button, 0, 0)
+        file_buttons.addWidget(self.remove_button, 0, 1)
+        file_buttons.addWidget(self.clear_button, 0, 2)
 
         self.output_button = QPushButton()
         self.output_button.clicked.connect(self.select_output_folder)
         self.output_button.setObjectName("accentButton")
+        self.output_button.setMinimumWidth(0)
 
         self.app_title_label = QLabel()
         self.app_title_label.setObjectName("appTitle")
@@ -707,12 +745,15 @@ class MainWindow(QMainWindow):
         self.output_mode_hint_label = QLabel()
         self.output_mode_hint_label.setObjectName("hintBox")
         self.output_mode_hint_label.setWordWrap(True)
+        self.output_mode_hint_label.setMaximumHeight(72)
         self.ai_status_hint_label = QLabel()
         self.ai_status_hint_label.setObjectName("aiStatusHint")
         self.ai_status_hint_label.setWordWrap(True)
+        self.ai_status_hint_label.setMaximumHeight(54)
         self.ollama_hint_label = QLabel()
         self.ollama_hint_label.setObjectName("hintBox")
         self.ollama_hint_label.setWordWrap(True)
+        self.ollama_hint_label.setMaximumHeight(46)
         self.progress_label = QLabel()
         self.status_label = QLabel()
 
@@ -723,7 +764,9 @@ class MainWindow(QMainWindow):
         self.ollama_auto_install_button.setObjectName("warningButton")
 
         header_layout = QHBoxLayout()
+        header_layout.setSpacing(10)
         title_layout = QVBoxLayout()
+        title_layout.setSpacing(1)
         title_layout.addWidget(self.app_title_label)
         title_layout.addWidget(self.app_subtitle_label)
         header_layout.addWidget(self.logo_label)
@@ -753,8 +796,8 @@ class MainWindow(QMainWindow):
         )
         conversion_layout = conversion_card.layout()
         settings_grid = QGridLayout()
-        settings_grid.setHorizontalSpacing(16)
-        settings_grid.setVerticalSpacing(10)
+        settings_grid.setHorizontalSpacing(10)
+        settings_grid.setVerticalSpacing(7)
         self._add_setting_row(settings_grid, 0, self.mode_label, self.mode_combo)
         self._add_setting_row(settings_grid, 1, self.pdf_output_label, self.pdf_output_combo)
         self._add_setting_row(settings_grid, 2, self.quality_label, self.quality_combo)
@@ -767,13 +810,10 @@ class MainWindow(QMainWindow):
             self.output_language_combo,
         )
         checkbox_layout = QGridLayout()
-        checkbox_layout.setHorizontalSpacing(18)
-        checkbox_layout.setVerticalSpacing(10)
-        checkbox_layout.addWidget(self.keep_timestamps_checkbox, 0, 0)
-        checkbox_layout.addWidget(self.review_questions_checkbox, 0, 1)
-        checkbox_layout.addWidget(self.checklist_checkbox, 1, 0)
-        checkbox_layout.addWidget(self.separator_checkbox, 1, 1)
-        checkbox_layout.addWidget(self.ocr_checkbox, 2, 0, 1, 2)
+        checkbox_layout.setHorizontalSpacing(12)
+        checkbox_layout.setVerticalSpacing(6)
+        checkbox_layout.addWidget(self.separator_checkbox, 0, 0)
+        checkbox_layout.addWidget(self.ocr_checkbox, 0, 1)
         settings_grid.addLayout(checkbox_layout, 6, 0, 1, 2)
         settings_grid.setColumnStretch(1, 1)
         conversion_layout.addLayout(settings_grid)
@@ -783,8 +823,8 @@ class MainWindow(QMainWindow):
         ai_card = self._create_card("aiCard", self.ai_title_label, "aiTitle")
         ai_layout = ai_card.layout()
         ai_grid = QGridLayout()
-        ai_grid.setHorizontalSpacing(16)
-        ai_grid.setVerticalSpacing(10)
+        ai_grid.setHorizontalSpacing(10)
+        ai_grid.setVerticalSpacing(7)
         self._add_setting_row(ai_grid, 0, self.ai_mode_label, self.ai_mode_combo)
         ai_grid.addWidget(self.ai_status_hint_label, 1, 0, 1, 2)
         ai_grid.setColumnStretch(1, 1)
@@ -792,8 +832,8 @@ class MainWindow(QMainWindow):
         self.ollama_details_widget = QWidget()
         ollama_details_layout = QGridLayout(self.ollama_details_widget)
         ollama_details_layout.setContentsMargins(0, 0, 0, 0)
-        ollama_details_layout.setHorizontalSpacing(16)
-        ollama_details_layout.setVerticalSpacing(10)
+        ollama_details_layout.setHorizontalSpacing(10)
+        ollama_details_layout.setVerticalSpacing(7)
         self._add_setting_row(
             ollama_details_layout,
             0,
@@ -821,21 +861,24 @@ class MainWindow(QMainWindow):
         self.ollama_action_widget = QWidget()
         ollama_action_layout = QGridLayout(self.ollama_action_widget)
         ollama_action_layout.setContentsMargins(0, 0, 0, 0)
-        ollama_action_layout.setHorizontalSpacing(10)
-        ollama_action_layout.setVerticalSpacing(10)
+        ollama_action_layout.setHorizontalSpacing(8)
+        ollama_action_layout.setVerticalSpacing(6)
         ollama_action_layout.addWidget(self.ollama_check_button, 0, 0)
         ollama_action_layout.addWidget(self.ollama_refresh_models_button, 0, 1)
-        ollama_action_layout.addWidget(self.ollama_pull_button, 0, 2)
-        ollama_action_layout.addWidget(self.ollama_auto_install_button, 1, 0)
-        ollama_action_layout.addWidget(self.ollama_guide_button, 1, 1)
-        ollama_action_layout.addWidget(self.ollama_download_button, 1, 2)
-        ollama_details_layout.addWidget(self.ollama_action_widget, 4, 0, 1, 2)
-        ollama_details_layout.addWidget(self.ollama_hint_label, 5, 0, 1, 2)
+        ollama_action_layout.addWidget(self.ollama_latest_check_button, 1, 0)
+        ollama_action_layout.addWidget(self.ollama_pull_button, 1, 1)
+        ollama_action_layout.addWidget(self.ollama_auto_install_button, 2, 0)
+        ollama_action_layout.addWidget(self.ollama_guide_button, 2, 1)
+        ollama_action_layout.addWidget(self.ollama_download_button, 3, 0, 1, 2)
+        ollama_details_layout.addWidget(self.ollama_action_widget, 0, 2, 4, 1)
+        ollama_details_layout.addWidget(self.ollama_hint_label, 4, 0, 1, 3)
         ollama_details_layout.setColumnStretch(1, 1)
+        ollama_details_layout.setColumnStretch(2, 1)
         ai_layout.addWidget(self.ollama_details_widget)
 
         self.run_title_label = QLabel()
         run_card = self._create_card("runCard", self.run_title_label, "runTitle")
+        run_card.setMaximumHeight(220)
         run_layout = run_card.layout()
         run_layout.addWidget(self.start_button)
         self.progress_label.setObjectName("fieldLabel")
@@ -845,57 +888,65 @@ class MainWindow(QMainWindow):
         run_layout.addWidget(self.status_label)
         run_layout.addWidget(self.status_value_label)
         run_actions = QHBoxLayout()
-        run_actions.addWidget(self.log_toggle_button)
         run_actions.addStretch(1)
         run_actions.addWidget(self.open_output_button)
         run_layout.addLayout(run_actions)
 
         self.log_card = self._create_card("logCard", self.log_label, "fieldLabel")
+        self.log_card.setMaximumHeight(220)
         log_layout = self.log_card.layout()
         log_layout.addWidget(self.log_area)
-        self.log_card.setVisible(False)
+        self.log_card.setVisible(True)
 
-        grid_layout = QGridLayout()
-        grid_layout.setHorizontalSpacing(12)
-        grid_layout.setVerticalSpacing(12)
-        grid_layout.addWidget(input_card, 0, 0)
-        grid_layout.addWidget(conversion_card, 0, 1)
-        grid_layout.addWidget(ai_card, 1, 0)
-        grid_layout.addWidget(run_card, 1, 1)
-        grid_layout.setColumnStretch(0, 1)
-        grid_layout.setColumnStretch(1, 1)
+        workflow_layout = QGridLayout()
+        workflow_layout.setHorizontalSpacing(12)
+        workflow_layout.setVerticalSpacing(10)
+        workflow_layout.addWidget(input_card, 0, 0)
+        workflow_layout.addWidget(conversion_card, 0, 1)
+        workflow_layout.addWidget(ai_card, 0, 2)
+        workflow_layout.addWidget(run_card, 1, 0)
+        workflow_layout.addWidget(self.log_card, 1, 1, 1, 2)
+        workflow_layout.setColumnStretch(0, 2)
+        workflow_layout.setColumnStretch(1, 2)
+        workflow_layout.setColumnStretch(2, 3)
+        workflow_layout.setRowMinimumHeight(0, 305)
+        workflow_layout.setRowMinimumHeight(1, 205)
+        workflow_layout.setRowStretch(0, 4)
+        workflow_layout.setRowStretch(1, 1)
 
         footer_layout = QHBoxLayout()
         footer_layout.addWidget(self.author_footer_label)
         footer_layout.addStretch(1)
 
         layout = QVBoxLayout()
-        layout.setContentsMargins(18, 16, 18, 16)
-        layout.setSpacing(12)
+        layout.setContentsMargins(12, 10, 12, 8)
+        layout.setSpacing(8)
         layout.addLayout(header_layout)
-        layout.addLayout(grid_layout)
-        layout.addWidget(self.log_card)
+        layout.addLayout(workflow_layout)
         layout.addLayout(footer_layout)
 
         content = QWidget()
+        content.setMinimumWidth(0)
         content.setLayout(layout)
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setWidget(content)
-
-        self.setCentralWidget(scroll_area)
+        self.setCentralWidget(content)
 
     def _create_card(self, object_name: str, title_label: QLabel, title_object: str) -> QFrame:
         card = QFrame()
         card.setObjectName(object_name)
         layout = QVBoxLayout(card)
-        layout.setContentsMargins(16, 14, 16, 14)
-        layout.setSpacing(12)
+        layout.setContentsMargins(10, 9, 10, 9)
+        layout.setSpacing(8)
+        layout.setAlignment(Qt.AlignTop)
         title_label.setObjectName(title_object)
-        title_row = QHBoxLayout()
+        title_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        title_row_widget = QWidget()
+        title_row_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        title_row = QHBoxLayout(title_row_widget)
+        title_row.setContentsMargins(0, 0, 0, 0)
+        title_row.setSpacing(0)
         title_row.addWidget(title_label)
         title_row.addStretch(1)
-        layout.addLayout(title_row)
+        layout.addWidget(title_row_widget)
         return card
 
     def _add_setting_row(
@@ -922,14 +973,14 @@ class MainWindow(QMainWindow):
             self.ollama_model_combo,
         ]
         for combo in combos:
-            combo.setMinimumContentsLength(14)
+            combo.setMinimumContentsLength(10)
             combo.setSizeAdjustPolicy(
                 QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
             )
             combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
-        self.ai_mode_combo.setMinimumContentsLength(18)
-        self.output_mode_combo.setMinimumContentsLength(18)
+        self.ai_mode_combo.setMinimumContentsLength(14)
+        self.output_mode_combo.setMinimumContentsLength(14)
 
     def tr(self, key: str, **kwargs: str) -> str:
         text = TRANSLATIONS[self.language][key]
@@ -1002,6 +1053,7 @@ class MainWindow(QMainWindow):
         self.ollama_endpoint_value.setText(DEFAULT_BASE_URL)
         self.ollama_installed_models_label.setText(self.tr("installed_models"))
         self.ollama_check_button.setText(self.tr("check_ollama"))
+        self.ollama_latest_check_button.setText(self.tr("check_ollama_latest"))
         self.ollama_auto_install_button.setText(self.tr("ollama_auto_install"))
         self.ollama_refresh_models_button.setText(self.tr("refresh_ollama_models"))
         self.ollama_guide_button.setText(self.tr("ollama_setup_guide"))
@@ -1074,6 +1126,8 @@ class MainWindow(QMainWindow):
             ],
             output_language_value,
         )
+        if self.ollama_model_combo.count() == 0 or self.ollama_model_combo.currentData() == "":
+            self._show_no_installed_model_choice()
         self.update_output_options()
 
     def update_output_options(self) -> None:
@@ -1092,6 +1146,7 @@ class MainWindow(QMainWindow):
         self.ollama_model_label.setEnabled(is_ollama)
         self.ollama_model_combo.setEnabled(is_ollama)
         self.ollama_check_button.setEnabled(is_ollama)
+        self.ollama_latest_check_button.setEnabled(is_ollama)
         self.ollama_auto_install_button.setEnabled(is_ollama)
         self.ollama_refresh_models_button.setEnabled(is_ollama)
         self.ollama_guide_button.setEnabled(is_ollama)
@@ -1112,26 +1167,35 @@ class MainWindow(QMainWindow):
             self.status_value_label.setText(self.tr("ollama_not_detected"))
 
     def refresh_ollama_model_selector(self) -> None:
-        current = self.ollama_model_combo.currentText().strip()
+        current = self._selected_ollama_model()
         models = list_models()
         if not models:
-            self.ollama_model_combo.clear()
-            self.ollama_model_combo.addItems(FALLBACK_MODELS)
-            self.ollama_model_combo.setCurrentText(current or DEFAULT_RECOMMENDED_MODEL)
+            self._show_no_installed_model_choice()
             self.ollama_installed_models_value.setText("-")
             self.append_log(self.tr("ollama_no_models"))
             return
 
         selected = select_best_available_model(
             models,
-            preferred_model=current if current not in FALLBACK_MODELS else None,
+            preferred_model=current,
         )
         self.ollama_model_combo.clear()
-        self.ollama_model_combo.addItems(models)
+        for model in models:
+            self.ollama_model_combo.addItem(model, model)
         self.ollama_model_combo.setCurrentText(selected)
         self.ollama_installed_models_value.setText(", ".join(models))
         self.settings.setValue("ollama_model", selected)
         self.append_log(self.tr("ollama_models_refreshed", models=", ".join(models)))
+
+    def _show_no_installed_model_choice(self) -> None:
+        self.ollama_model_combo.clear()
+        self.ollama_model_combo.addItem(self.tr("no_installed_models_choice"), "")
+
+    def _selected_ollama_model(self) -> str:
+        model_data = self.ollama_model_combo.currentData()
+        if isinstance(model_data, str) and model_data.strip():
+            return model_data.strip()
+        return ""
 
     def open_ollama_download(self) -> None:
         QDesktopServices.openUrl(QUrl("https://ollama.com/download"))
@@ -1154,8 +1218,34 @@ class MainWindow(QMainWindow):
         elif clicked == check_button:
             self.check_ollama_status()
 
+    def check_ollama_latest_version(self) -> None:
+        self.append_log(self.tr("ollama_version_check_started"))
+        self.status_value_label.setText(self.tr("ollama_version_check_started"))
+        self.ollama_latest_check_button.setEnabled(False)
+        self.ollama_version_check_worker = OllamaVersionCheckWorker()
+        self.ollama_version_check_worker.finished_check.connect(
+            self.ollama_latest_version_checked
+        )
+        self.ollama_version_check_worker.start()
+
+    def ollama_latest_version_checked(self, result: dict) -> None:
+        self.ollama_latest_check_button.setEnabled(
+            self.ai_mode_combo.currentData() == "ollama"
+        )
+        installed = str(result.get("installed_version") or "unknown")
+        latest = str(result.get("latest_version") or "unknown")
+        update = "yes" if result.get("update_available") else "no"
+        message = self.tr(
+            "ollama_version_check_result",
+            installed=installed,
+            latest=latest,
+            update=update,
+        )
+        self.status_value_label.setText(message)
+        self.append_log(message)
+
     def start_ollama_auto_install(self) -> None:
-        model = self.ollama_model_combo.currentText().strip() or DEFAULT_RECOMMENDED_MODEL
+        model = self._selected_ollama_model() or DEFAULT_RECOMMENDED_MODEL
         answer = QMessageBox.question(
             self,
             self.tr("ollama_setup_confirm_title"),
@@ -1167,16 +1257,34 @@ class MainWindow(QMainWindow):
         self.append_log(self.tr("ollama_setup_started"))
         self.ollama_status_value.setText(self.tr("ollama_installing"))
         self.status_value_label.setText(self.tr("status_ollama_setup"))
+        self.progress_bar.setValue(0)
         self._set_ollama_setup_controls_enabled(False)
         self.ollama_setup_worker = OllamaSetupWorker(model)
-        self.ollama_setup_worker.log_message.connect(self.append_log)
+        self.ollama_setup_worker.log_message.connect(self.ollama_setup_progress_changed)
         self.ollama_setup_worker.finished_setup.connect(self.ollama_auto_install_finished)
         self.ollama_setup_worker.start()
+
+    def ollama_setup_progress_changed(self, message: str) -> None:
+        self.append_log(message)
+        self.status_value_label.setText(message)
+        self._set_progress_from_message(message)
+
+    def _set_progress_from_message(self, message: str) -> None:
+        percent_marker = message.find("%")
+        if percent_marker < 1:
+            return
+        start = percent_marker
+        while start > 0 and message[start - 1].isdigit():
+            start -= 1
+        if start == percent_marker:
+            return
+        self.progress_bar.setValue(int(message[start:percent_marker]))
 
     def _set_ollama_setup_controls_enabled(self, enabled: bool) -> None:
         is_ollama = self.ai_mode_combo.currentData() == "ollama"
         final_enabled = enabled and is_ollama
         self.ollama_check_button.setEnabled(final_enabled)
+        self.ollama_latest_check_button.setEnabled(final_enabled)
         self.ollama_auto_install_button.setEnabled(final_enabled)
         self.ollama_refresh_models_button.setEnabled(final_enabled)
         self.ollama_guide_button.setEnabled(final_enabled)
@@ -1188,6 +1296,7 @@ class MainWindow(QMainWindow):
         self._set_ollama_setup_controls_enabled(True)
         self.append_log(self.tr("ollama_setup_finished", message=message))
         if ok:
+            self.progress_bar.setValue(100)
             self.ollama_status_value.setText(self.tr("ollama_running"))
             self.status_value_label.setText(self.tr("ollama_setup_finished", message=message))
             self.ollama_model_combo.setCurrentText(model)
@@ -1205,19 +1314,28 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, self.tr("ollama_guide_title"), message)
 
     def pull_selected_ollama_model(self) -> None:
-        model = self.ollama_model_combo.currentText().strip()
+        model = self._selected_ollama_model() or DEFAULT_RECOMMENDED_MODEL
         if not model:
             return
         self.settings.setValue("ollama_model", model)
         self.append_log(self.tr("ollama_pull_started", model=model))
         self.status_value_label.setText(self.tr("status_ollama_pull"))
+        self.progress_bar.setValue(0)
         self.ollama_pull_button.setEnabled(False)
         self.ollama_pull_worker = OllamaPullWorker(model)
+        self.ollama_pull_worker.progress_message.connect(self.ollama_pull_progress_changed)
         self.ollama_pull_worker.finished_message.connect(self.ollama_pull_finished)
         self.ollama_pull_worker.start()
 
+    def ollama_pull_progress_changed(self, message: str) -> None:
+        self.append_log(message)
+        self.status_value_label.setText(message)
+        self._set_progress_from_message(message)
+
     def ollama_pull_finished(self, message: str) -> None:
         self.ollama_pull_button.setEnabled(True)
+        if message == "ok":
+            self.progress_bar.setValue(100)
         self.append_log(self.tr("ollama_pull_finished", message=message))
         self.status_value_label.setText(self.tr("ollama_pull_finished", message=message))
         self.check_ollama_status()
@@ -1266,9 +1384,15 @@ class MainWindow(QMainWindow):
             return
 
         selected_ai_mode = self.ai_mode_combo.currentData() or "basic"
-        selected_ollama_model = (
-            self.ollama_model_combo.currentText().strip() or DEFAULT_RECOMMENDED_MODEL
-        )
+        selected_ollama_model = self._selected_ollama_model()
+        if selected_ai_mode == "ollama" and not selected_ollama_model:
+            QMessageBox.warning(
+                self,
+                self.tr("ollama_model_required_title"),
+                self.tr("ollama_model_required_message"),
+            )
+            return
+        selected_ollama_model = selected_ollama_model or DEFAULT_RECOMMENDED_MODEL
         self.settings.setValue("ai_mode", selected_ai_mode)
         self.settings.setValue("ollama_model", selected_ollama_model)
 
@@ -1286,9 +1410,9 @@ class MainWindow(QMainWindow):
             transcript_output_mode=self.output_mode_combo.currentData() or "study_note",
             transcript_output_language=self.output_language_combo.currentData() or "auto",
             ollama_model=selected_ollama_model,
-            transcript_keep_timestamps=self.keep_timestamps_checkbox.isChecked(),
-            transcript_review_questions=self.review_questions_checkbox.isChecked(),
-            transcript_checklist=self.checklist_checkbox.isChecked(),
+            transcript_keep_timestamps=False,
+            transcript_review_questions=False,
+            transcript_checklist=False,
         )
 
         self.progress_bar.setValue(0)
@@ -1297,13 +1421,18 @@ class MainWindow(QMainWindow):
         self.append_log(self.tr("starting"))
         self.worker = ConversionWorker(files, options)
         self.worker.log_message.connect(self.append_log)
-        self.worker.progress_changed.connect(self.progress_bar.setValue)
+        self.worker.progress_changed.connect(self.conversion_progress_changed)
         self.worker.finished_success.connect(self.conversion_finished)
         self.worker.failed.connect(self.conversion_failed)
         self.worker.start()
 
+    def conversion_progress_changed(self, percent: int) -> None:
+        self.progress_bar.setValue(percent)
+        self.status_value_label.setText(self.tr("status_conversion_progress", percent=percent))
+
     def append_log(self, message: str) -> None:
-        self.log_area.append(message)
+        timestamp = QDateTime.currentDateTime().toString("HH:mm:ss")
+        self.log_area.append(f"[{timestamp}] {message}")
 
     def toggle_log_visibility(self) -> None:
         self.set_log_visible(not self.log_expanded)
