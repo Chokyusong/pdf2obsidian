@@ -1,0 +1,1 @@
+Output mode: Executive Brief. Produce a structured executive review brief for quick sharing. This mode is planned for a later version.

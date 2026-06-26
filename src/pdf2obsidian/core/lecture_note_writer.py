@@ -5,11 +5,16 @@ from collections import Counter
 from datetime import date
 from pathlib import Path
 
+from pdf2obsidian.core.lecture.modes import normalize_output_mode
+from pdf2obsidian.core.lecture.templates import render_lecture_study_note
 from pdf2obsidian.core.transcript_processor import TranscriptBlock
 
 OUTPUT_TYPES = {
     "study_note": "lecture-study-note",
+    "simple_note": "lecture-simple-note",
+    "ebook": "lecture-ebook-draft",
     "ebook_draft": "lecture-ebook-draft",
+    "executive_summary": "lecture-executive-summary",
     "obsidian_moc": "obsidian-moc",
 }
 
@@ -41,6 +46,8 @@ STOPWORDS = {
 EXAMPLE_TERMS = ["예를", "예시", "사례", "예제로", "예컨대", "예시로"]
 ACTION_TERMS = ["먼저", "다음", "단계", "방법", "실행", "설정", "클릭", "입력", "작성", "만들"]
 CAUTION_TERMS = ["주의", "실수", "문제", "중요", "반드시", "하지 마", "안 됩니다", "위험"]
+MISSION_TERMS = ["미션", "과제", "연습", "실습", "제출", "기록", "해보세요"]
+COMPARISON_TERMS = ["비교", "차이", "반면", "보다", "장점", "단점", "한계"]
 
 
 def _yaml_value(value: str) -> str:
@@ -117,6 +124,105 @@ def _filter_sentences(text: str, terms: list[str], limit: int = 8) -> list[str]:
     return matched
 
 
+def _table_rows(rows: list[tuple[str, str, str]]) -> str:
+    if not rows:
+        return "|  | Not clearly found in source. |  |"
+    return "\n".join(f"| {first} | {second} | {third} |" for first, second, third in rows)
+
+
+def _number_rows(sentences: list[str]) -> str:
+    rows = [
+        (f"Item {index}", sentence, "Concrete detail from source")
+        for index, sentence in enumerate(sentences, start=1)
+    ]
+    return _table_rows(rows)
+
+
+def _concept_sections(full_text: str, keywords: list[str]) -> str:
+    sections = []
+    for index, keyword in enumerate(keywords[:6], start=1):
+        related = _filter_sentences(full_text, [keyword], limit=1)
+        explanation = related[0] if related else "Not clearly found in source."
+        sections.append(
+            "\n".join(
+                [
+                    f"### 3-{index}. {keyword}",
+                    "",
+                    "#### Meaning",
+                    "",
+                    explanation,
+                    "",
+                    "#### Why It Matters",
+                    "",
+                    explanation,
+                    "",
+                    "#### Explanation From the Lecture",
+                    "",
+                    explanation,
+                    "",
+                    "#### How This Applies to the User",
+                    "",
+                    "Not clearly found in source.",
+                ]
+            )
+        )
+    return "\n\n---\n\n".join(sections)
+
+
+def _flow_rows(chunks: list[list[TranscriptBlock]]) -> str:
+    rows: list[tuple[str, str, str, str]] = []
+    for index, chunk in enumerate(chunks, start=1):
+        text = " ".join(block.text for block in chunk)
+        first_sentence = _sentences(text)[:1]
+        topic = f"Part {index}"
+        key_content = first_sentence[0] if first_sentence else "Not clearly found in source."
+        rows.append((str(index), topic, key_content, "★★★★★"))
+    if not rows:
+        return "| 1 | Not clearly found in source. | Not clearly found in source. | ★★★★★ |"
+    return "\n".join(
+        f"| {order} | {topic} | {content} | {importance} |"
+        for order, topic, content, importance in rows
+    )
+
+
+def _detailed_sections(
+    chunks: list[list[TranscriptBlock]],
+    preserve_level: str,
+    keep_timestamps: bool,
+) -> str:
+    if not chunks:
+        return ""
+
+    sections = []
+    for index, chunk in enumerate(chunks, start=1):
+        heading = _timestamp_heading(chunk, keep_timestamps, index)
+        content = _chunk_text(chunk, preserve_level)
+        sections.append(
+            "\n".join(
+                [
+                    heading,
+                    "",
+                    "#### Lecture Content",
+                    "",
+                    content,
+                    "",
+                    "#### Example",
+                    "",
+                    "Not clearly found in source.",
+                    "",
+                    "#### Interpretation",
+                    "",
+                    "Not clearly found in source.",
+                    "",
+                    "#### What the Learner Should Understand",
+                    "",
+                    content,
+                ]
+            )
+        )
+    return "\n\n---\n\n".join(sections)
+
+
 def _frontmatter(
     title: str,
     source_file: str,
@@ -165,36 +271,53 @@ def _study_note(
     include_checklist: bool,
     created: date | None,
 ) -> list[str]:
-    lines = _frontmatter(title, source_file, OUTPUT_TYPES["study_note"], "study_note", created)
     overview = _sentences(full_text)[:3]
-    _write_section(lines, "## 강의 개요", [f"- {sentence}" for sentence in overview])
-
-    concept_lines = []
-    for keyword in keywords[:6]:
-        related = _filter_sentences(full_text, [keyword], limit=1)
-        if related:
-            concept_lines.append(f"- **{keyword}**: {related[0]}")
-        else:
-            concept_lines.append(f"- **{keyword}**")
-    _write_section(lines, "## 핵심 개념", concept_lines)
-
     chunks = _chunk_blocks(blocks, target_chars=900 if preserve_level == "low" else 1400)
-    if chunks:
-        lines.extend(["## 강의 흐름", ""])
-        for index, chunk in enumerate(chunks, start=1):
-            lines.extend(
-                [
-                    _timestamp_heading(chunk, keep_timestamps, index),
-                    "",
-                    _chunk_text(chunk, preserve_level),
-                    "",
-                ]
-            )
-
-    _write_section(lines, "## 예시 및 설명", _filter_sentences(full_text, EXAMPLE_TERMS))
     action_sentences = _filter_sentences(full_text, ACTION_TERMS)
-    _write_section(lines, "## 실습 또는 실행 단계", action_sentences)
-    _write_section(lines, "## 주의사항", _filter_sentences(full_text, CAUTION_TERMS))
+    example_sentences = _filter_sentences(full_text, EXAMPLE_TERMS)
+    caution_sentences = _filter_sentences(full_text, CAUTION_TERMS)
+    mission_sentences = _filter_sentences(full_text, MISSION_TERMS)
+    comparison_sentences = _filter_sentences(full_text, COMPARISON_TERMS)
+    number_sentences = [
+        sentence for sentence in _sentences(full_text) if re.search(r"\d|[0-9]+", sentence)
+    ][:8]
+
+    details = _detailed_sections(chunks, preserve_level, keep_timestamps)
+    if example_sentences:
+        details = f"{details}\n\n#### Source Examples\n\n" + "\n".join(
+            f"- {sentence}" for sentence in example_sentences
+        )
+    if caution_sentences:
+        details = f"{details}\n\n#### Cautions\n\n" + "\n".join(
+            f"- {sentence}" for sentence in caution_sentences
+        )
+
+    markdown = render_lecture_study_note(
+        title=title,
+        source_type="transcript",
+        source_file=source_file,
+        overview="\n".join(f"- {sentence}" for sentence in overview),
+        flow=_flow_rows(chunks),
+        concepts=_concept_sections(full_text, keywords),
+        details=details,
+        comparisons=_table_rows(
+            [
+                ("Meaning", sentence, "Not clearly found in source.")
+                for sentence in comparison_sentences[:4]
+            ]
+        ),
+        numbers=_number_rows(number_sentences),
+        actions="\n".join(
+            f"{index}. {sentence}" for index, sentence in enumerate(action_sentences[:6], start=1)
+        ),
+        mission="\n".join(f"- {sentence}" for sentence in mission_sentences),
+        personal_application="Not clearly found in source.",
+        final_review="\n".join(f"- {sentence}" for sentence in overview),
+        next_actions="\n".join(f"- [ ] {sentence}" for sentence in action_sentences[:6]),
+        core_message=overview[0] if overview else "",
+        created=created,
+    )
+    lines = markdown.splitlines()
 
     if include_review_questions and keywords:
         questions = [
@@ -256,8 +379,8 @@ def _obsidian_moc(
     _write_section(lines, "## 노트 후보", [f"- {keyword}" for keyword in keywords[:8]])
     _write_section(lines, "## 관련 키워드 후보", [f"- {keyword}" for keyword in keywords])
 
-    summary = _sentences(full_text)[:5]
-    _write_section(lines, "## 원문 기반 요약 단서", [f"- {sentence}" for sentence in summary])
+    source_clues = _sentences(full_text)[:5]
+    _write_section(lines, "## 원문 기반 이해 단서", [f"- {sentence}" for sentence in source_clues])
     return lines
 
 
@@ -277,9 +400,11 @@ def write_lecture_note(
     full_text = " ".join(block.text for block in blocks)
     keywords = _keyword_candidates(full_text)
     note_title = _derive_title(title, full_text)
-    selected_format = output_format if output_format in OUTPUT_TYPES else "study_note"
+    selected_format = (
+        "obsidian_moc" if output_format == "obsidian_moc" else normalize_output_mode(output_format)
+    )
 
-    if selected_format == "ebook_draft":
+    if selected_format == "ebook":
         lines = _ebook_draft(
             note_title,
             source_file,

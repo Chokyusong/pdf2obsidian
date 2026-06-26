@@ -9,12 +9,17 @@ description = "Local PDF, image, and lecture transcript converter for Obsidian M
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
-authors = [{ name = "PDF2Obsidian contributors" }]
+authors = [{ name = "Cho Kyusong" }]
 dependencies = [
     "PySide6>=6.7",
     "PyMuPDF>=1.24",
     "Pillow>=10.4",
 ]
+
+[project.urls]
+Homepage = "https://github.com/Chokyusong/pdf2obsidian"
+Repository = "https://github.com/Chokyusong/pdf2obsidian"
+Issues = "https://github.com/Chokyusong/pdf2obsidian/issues"
 
 [project.optional-dependencies]
 ocr = ["easyocr>=1.7", "pytesseract>=0.3"]
@@ -25,6 +30,9 @@ pdf2obsidian = "pdf2obsidian.main:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"pdf2obsidian.prompts" = ["*.txt"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

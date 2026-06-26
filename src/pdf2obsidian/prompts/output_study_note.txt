@@ -1,0 +1,1 @@
+Output mode: Lecture Reconstruction MD. Produce a full Obsidian lecture study material that can replace watching the original lecture. Use stable headings, frontmatter, lecture flow, key concepts, detailed notes, examples, numbers, missions, practical application, final core notes, and next actions.

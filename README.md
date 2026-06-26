@@ -6,6 +6,16 @@
 [![Release](https://img.shields.io/github/v/release/Chokyusong/pdf2obsidian)](https://github.com/Chokyusong/pdf2obsidian/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+## Author
+
+Created and maintained by **Cho Kyusong**
+
+GitHub: [Chokyusong/pdf2obsidian](https://github.com/Chokyusong/pdf2obsidian)
+
+License: MIT
+
+This project is open-source software released under the MIT License.
+
 PDF2Obsidian is a local-first open-source desktop tool for Obsidian users and learning-material managers. It converts PDF, image, and lecture subtitle files into Obsidian-ready Markdown and lightweight assets.
 
 It is designed for Windows users who want to keep their files on their own computer. The app does not upload files to a server and does not use external AI APIs such as OpenAI, Claude, or Gemini.
@@ -35,7 +45,7 @@ The default workflow should stay different from cloud AI products. PDF2Obsidian 
 Target capabilities:
 
 - PDF conversion: layout-aware text extraction, heading/list/table restoration, embedded image extraction, table-region fallbacks, and Obsidian Markdown output.
-- Subtitle conversion: SRT/VTT/TXT/MD parsing, repeated speech cleanup, lecture-flow preservation, concept explanation, examples, procedures, cautions, and final summary.
+- Subtitle conversion: SRT/VTT/TXT/MD parsing, repeated speech cleanup, lecture-flow preservation, concept explanation, examples, procedures, cautions, and lecture reconstruction.
 - YouTube subtitle workflow: import downloaded YouTube subtitles first; direct URL support can be added later.
 - Output: Markdown folder with assets, ready to move into an Obsidian vault.
 
@@ -167,6 +177,43 @@ PDF2Obsidian currently converts lecture subtitles into structured Markdown notes
 
 The default mode should work without external AI APIs. Rule-based structuring should be improved first. Optional local LLM support such as Ollama can be explored later. Optional OpenAI API support may be considered only as an enhancement, never as a required dependency.
 
+## AI Mode
+
+Lecture transcript processing has an AI Mode design with three levels:
+
+- `Basic (No AI)`: default, rule-based, fully local, no model or internet required.
+- `Local AI (Ollama)`: optional local LLM mode for better lecture-note reconstruction when Ollama is already installed and running.
+- `Cloud AI (OpenAI Compatible) - Future`: planned optional enhancement only. It is not enabled by default and is not required for core conversion.
+
+AI Mode controls the processing engine. Output Mode controls the shape of the result:
+
+- `Simple Note`: short review note, future mode.
+- `Lecture Reconstruction MD`: default lecture replacement study material.
+- `Ebook`: long-form manuscript, future mode.
+- `Executive Brief`: concise review brief, future mode.
+
+Output Language controls the language of transcript notes:
+
+- `Same as source`: default for open-source use.
+- `Korean`: translate or rewrite the result in Korean.
+- `English`: translate or rewrite the result in English.
+
+PDF2Obsidian does not require cloud AI. Files stay on the local machine in Basic mode and when using a local Ollama server. Ollama must be installed separately for now; the app does not silently install Ollama or download models.
+
+Recommended Ollama models:
+
+- `qwen2.5:3b` for lightweight testing.
+- `llama3.2:3b` for general testing.
+- `qwen2.5:7b` when Korean lecture quality matters more than speed.
+
+## Lecture Study Note Template
+
+The default transcript output follows a fixed Obsidian study-note structure. It is designed to preserve key concepts, explanations, examples, numbers, comparisons, missions, action steps, and review points without inventing unsupported facts.
+
+See [Lecture Study Note Template](docs/lecture-study-note-template.md).
+
+For beginner-friendly Ollama setup steps, see [Ollama Setup Guide](docs/ollama-setup.md).
+
 ## Example Conversion
 
 This repository includes reproducible synthetic demo files. They are generated only for public documentation and do not contain real course names, paid material, private file paths, or copied transcript text.
@@ -176,7 +223,7 @@ This repository includes reproducible synthetic demo files. They are generated o
 Demo inputs:
 
 - [sample_course.pdf](docs/samples/sample_course.pdf): cover, table of contents, body sections, one simple table, checklist, link, and five synthetic diagrams.
-- [sample_lecture.vtt](docs/samples/sample_lecture.vtt): about 100 timestamped subtitle cues covering introduction, concepts, examples, practice, summary, review questions, and mission.
+- [sample_lecture.vtt](docs/samples/sample_lecture.vtt): about 100 timestamped subtitle cues covering introduction, concepts, examples, practice, recap, review questions, and mission.
 
 Desktop workflow:
 

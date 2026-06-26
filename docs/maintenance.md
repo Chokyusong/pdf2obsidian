@@ -63,3 +63,19 @@ Cover subtitle merging, semantic section detection, keyword extraction, examples
 ### Add before/after examples for subtitle-to-study-note conversion
 
 Use synthetic subtitle samples only. Do not commit real lecture names, instructor names, paid course titles, or raw private transcripts.
+
+### Add tests for AI mode selection
+
+Verify that Basic mode is the default and that AI Mode remains independent from Output Mode.
+
+### Add mock tests for Ollama client
+
+Mock Ollama status, model list, pull, timeout, and generate responses. Tests must pass without a running Ollama server.
+
+### Add mock tests for AI summarizer
+
+Cover chunking, Ollama failure fallback, and Study Note Markdown rendering without real network calls.
+
+### Add privacy scan for API keys and private course names
+
+Before releases, scan for provider API key names, local paths, private course names, and raw transcript content.

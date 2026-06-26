@@ -3,9 +3,11 @@ from __future__ import annotations
 from io import BytesIO
 
 import fitz
+import pytest
 from PIL import Image, ImageDraw
 
 from pdf2obsidian.core.converter import ConversionOptions, convert_file
+from pdf2obsidian.core.lecture.ai_summarizer import AIReconstructionResult
 
 
 def _sample_png_bytes() -> bytes:
@@ -76,3 +78,54 @@ def test_pdf_webp_compression_creates_compressed_pdf_and_report(tmp_path):
 
     with fitz.open(compressed_pdf) as compressed:
         assert compressed.page_count == 1
+
+
+def test_transcript_ollama_failure_raises_instead_of_fallback(tmp_path, monkeypatch):
+    transcript_path = tmp_path / "lecture.txt"
+    output_root = tmp_path / "output"
+    transcript_path.write_text(
+        "오늘은 로컬 학습 노트를 만드는 방법을 설명합니다. 먼저 자막 파일을 준비합니다.",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr("pdf2obsidian.core.converter.is_ollama_running", lambda base_url: True)
+    monkeypatch.setattr(
+        "pdf2obsidian.core.converter.reconstruct_blocks_with_ollama",
+        lambda *args, **kwargs: AIReconstructionResult(
+            markdown="should not be saved",
+            chunks=1,
+            warning="Ollama reconstruction failed: model not found",
+        ),
+    )
+
+    with pytest.raises(ValueError, match="Ollama reconstruction failed"):
+        convert_file(
+            transcript_path,
+            ConversionOptions(output_root=output_root, transcript_ai_mode="ollama"),
+        )
+
+    assert not (output_root / "lecture" / "lecture.md").exists()
+
+
+def test_transcript_ollama_short_output_logs_preservation_warning(tmp_path, monkeypatch):
+    transcript_path = tmp_path / "lecture.txt"
+    output_root = tmp_path / "output"
+    transcript_path.write_text("원문 보존 테스트입니다. " * 200, encoding="utf-8")
+
+    monkeypatch.setattr("pdf2obsidian.core.converter.is_ollama_running", lambda base_url: True)
+    monkeypatch.setattr(
+        "pdf2obsidian.core.converter.reconstruct_blocks_with_ollama",
+        lambda *args, **kwargs: AIReconstructionResult(
+            markdown="---\ntitle: short\n---\n\n# short\n",
+            chunks=1,
+        ),
+    )
+
+    logs: list[str] = []
+    convert_file(
+        transcript_path,
+        ConversionOptions(output_root=output_root, transcript_ai_mode="ollama"),
+        log=logs.append,
+    )
+
+    assert any("less than 25%" in message for message in logs)

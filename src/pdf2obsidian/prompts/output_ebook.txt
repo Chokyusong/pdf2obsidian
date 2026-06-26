@@ -1,0 +1,2 @@
+Output mode: Ebook. Produce an independent learning manuscript with concepts, explanations, cases, procedures, cautions, and FAQ-style review. This mode is planned for a later version.
+

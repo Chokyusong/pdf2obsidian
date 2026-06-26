@@ -1,0 +1,2 @@
+Future optional cloud AI prompt. Use only when the user explicitly chooses a cloud provider and supplies their own API key. Warn that source text may be sent to the selected provider. The application must remain fully usable without cloud AI.
+

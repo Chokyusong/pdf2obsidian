@@ -4,7 +4,18 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
+from pdf2obsidian.core.ai.ollama_client import is_ollama_running
 from pdf2obsidian.core.image_processor import save_image_as_webp
+from pdf2obsidian.core.lecture.ai_summarizer import reconstruct_blocks_with_ollama
+from pdf2obsidian.core.lecture.modes import (
+    AI_MODE_BASIC,
+    AI_MODE_CLOUD_FUTURE,
+    AI_MODE_OLLAMA,
+    DEFAULT_AI_MODE,
+    DEFAULT_OUTPUT_MODE,
+    normalize_ai_mode,
+    normalize_output_mode,
+)
 from pdf2obsidian.core.lecture_note_writer import write_lecture_note
 from pdf2obsidian.core.markdown_writer import (
     write_image_markdown,
@@ -36,6 +47,11 @@ class ConversionOptions:
     pdf_output_format: str = "markdown_image"
     transcript_preserve_level: str = "medium"
     transcript_output_format: str = "study_note"
+    transcript_ai_mode: str = DEFAULT_AI_MODE
+    transcript_output_mode: str = DEFAULT_OUTPUT_MODE
+    transcript_output_language: str = "auto"
+    ollama_model: str = "qwen2.5:3b"
+    ollama_base_url: str = "http://localhost:11434"
     transcript_keep_timestamps: bool = True
     transcript_review_questions: bool = True
     transcript_checklist: bool = True
@@ -147,13 +163,53 @@ def convert_file(
             raise ValueError("Transcript files cannot be converted in PDF/Image mode.")
         emit(f"Processing transcript: {source.name}")
         blocks = read_transcript(source)
+        ai_mode = normalize_ai_mode(options.transcript_ai_mode)
+        output_mode = normalize_output_mode(
+            options.transcript_output_mode or options.transcript_output_format
+        )
+
+        if ai_mode == AI_MODE_OLLAMA:
+            if is_ollama_running(options.ollama_base_url):
+                emit(f"Using Local AI (Ollama) with model: {options.ollama_model}")
+                reconstruction = reconstruct_blocks_with_ollama(
+                    blocks,
+                    title=title,
+                    source_type=source.suffix.lower().lstrip(".") or "transcript",
+                    source_file=source.name,
+                    output_language=options.transcript_output_language,
+                    model=options.ollama_model,
+                    base_url=options.ollama_base_url,
+                )
+                if reconstruction.warning:
+                    emit(reconstruction.warning)
+                    raise ValueError(reconstruction.warning)
+                source_chars = sum(len(block.text) for block in blocks)
+                output_chars = len(reconstruction.markdown)
+                if source_chars and output_chars < source_chars * 0.25:
+                    emit(
+                        "Warning: the generated Markdown is less than 25% of the source text. "
+                        "Source details may be missing. Try a larger model or rerun the conversion."
+                    )
+                markdown_path.write_text(reconstruction.markdown.rstrip() + "\n", encoding="utf-8")
+                return ConversionResult(source, item_dir, markdown_path, "transcript")
+            raise ValueError(
+                "Ollama was not detected. Start Ollama, click Check Ollama, "
+                "and try Local AI again."
+            )
+
+        if ai_mode == AI_MODE_CLOUD_FUTURE:
+            emit("Cloud AI is a future optional mode. Falling back to Basic (No AI) mode.")
+            ai_mode = AI_MODE_BASIC
+
+        if ai_mode == AI_MODE_BASIC:
+            emit(f"Using Basic (No AI) mode with output mode: {output_mode}")
         write_lecture_note(
             markdown_path,
             title=title,
             source_file=source.name,
             blocks=blocks,
             preserve_level=options.transcript_preserve_level,
-            output_format=options.transcript_output_format,
+            output_format=output_mode,
             keep_timestamps=options.transcript_keep_timestamps,
             include_review_questions=options.transcript_review_questions,
             include_checklist=options.transcript_checklist,

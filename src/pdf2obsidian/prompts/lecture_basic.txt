@@ -1,0 +1,2 @@
+Use rule-based lecture reconstruction. Clean subtitle noise, merge short lines into readable paragraphs, preserve timestamp order when available, and never add unsupported facts. Keep the result useful as an Obsidian study note.
+

@@ -137,6 +137,30 @@ Introduction: The Obsidian workflow starts with a local source file and a clear 
 
 In Obsidian, this appears as a study note with overview, key concepts, timestamped sections, review questions, and checklist content when action sentences are detected.
 
+### Lecture Study Note Template
+
+The default transcript output mode is `Study Note`. It uses a fixed structure so repeated runs stay predictable:
+
+```markdown
+## 0. One-Sentence Core Message
+
+## 1. Full Lecture Overview
+
+## 2. Lecture Flow Structure
+
+## 3. Key Concepts
+
+## 4. Detailed Lecture Notes
+
+## 7. Practical Application
+
+## 11. Next Actions
+```
+
+Basic mode fills this structure from local rule-based parsing. Optional Local AI with Ollama can use the same structure when the user explicitly selects it and Ollama is already running locally.
+
+Use only synthetic, public-domain, openly licensed, or explicitly redistributable samples when documenting before/after output.
+
 ## PDF Import
 
 Input:
@@ -350,3 +374,5 @@ Good example:
 - The app does not require login.
 - The app does not upload files to a cloud server.
 - The app does not require OpenAI, Claude, Gemini, or other external AI APIs.
+- Basic mode is the default for transcript processing.
+- Ollama is optional and local; the app does not install it or pull models without a user action.

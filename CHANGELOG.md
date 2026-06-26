@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Added
+
+- Fixed lecture study note template documentation.
+- AI Mode design for Basic, optional Local AI with Ollama, and future Cloud AI.
+- Output Mode structure for Review Note, Lecture Reconstruction MD, Ebook, and Executive Brief.
+- Optional Ollama client and mock-tested AI reconstruction foundation.
+- External prompt files for lecture and output-mode guidance.
+- Beginner-friendly Ollama setup guide in the app and documentation.
+- Local AI transcript output now stores Ollama's final Markdown directly instead of wrapping it again.
+- Output Language option for transcript notes: same as source, Korean, or English.
+- Strengthened Local AI prompt to preserve source information and generate lecture reconstruction Markdown instead of a shortened note.
+- Added creator information to the license, package metadata, README files, GUI footer, and CLI version output.
+
 ## 0.1.2 - 2026-06-26
 
 ### Added

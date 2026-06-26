@@ -1,0 +1,2 @@
+Output mode: Simple Note. Produce a short review note with the core message, key concepts, and a compact checklist. This mode is planned for a later version.
+

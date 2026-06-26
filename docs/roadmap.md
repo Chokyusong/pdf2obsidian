@@ -43,12 +43,22 @@ The project does not aim to become a general quiz, flashcard, mind map, or chatb
 
 ## 0.3.0
 
-- Table extraction research.
-- Local web app prototype with FastAPI or Streamlit.
-- Optional zip export.
+- Fixed Lecture Study Note Template for Obsidian-ready transcript output.
+- AI Mode selection: Basic, Local AI with Ollama, and future Cloud AI.
+- Output Mode selection: Simple Note, Study Note, Ebook, and Executive Summary.
+- Optional Ollama integration foundation without automatic installation.
+- Mock-tested local AI summarization pipeline.
 - More transcript templates for Obsidian-ready study notes.
 - Generate lecture notes with overview, key concepts, examples, action steps, cautions, review questions, and execution checklist.
 - YouTube subtitle import workflow.
+
+## 0.4.0
+
+- Assisted Ollama installation via a clear user-confirmed workflow, if safe.
+- OpenAI-compatible cloud AI mode as an optional enhancement.
+- Local web app prototype with FastAPI or Streamlit.
+- Optional zip export.
+- Table extraction research.
 
 ## Later
 
