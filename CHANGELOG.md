@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- Enabled CI release-build workflow runs for `v*` version tags.
+
 ## 0.1.6 - 2026-06-27
 
 ### Added
