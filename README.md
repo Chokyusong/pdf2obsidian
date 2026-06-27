@@ -40,6 +40,10 @@ PDF2Obsidian helps students, researchers, and knowledge workers turn static lear
 - Lecture subtitles become structured study notes.
 - Optional OCR runs only with locally installed OCR tools.
 
+> Current PDF conversion does not perfectly reproduce the original visual layout.
+> It extracts text, tables, links, and selected images, then rebuilds them as
+> Obsidian-friendly Markdown. Layout-aware restoration is an ongoing goal.
+
 ## Final Product Vision
 
 The long-term goal is focused on two workflows:
@@ -135,6 +139,10 @@ Default output is created under:
 output/
 ```
 
+When an output folder with the same source name already exists, PDF2Obsidian
+creates a new numbered folder such as `sample_2` instead of overwriting existing
+output.
+
 ## Obsidian Output Example
 
 For `sample.pdf`:
@@ -178,7 +186,7 @@ Paragraph text...
 ![[Files/sample/p001-img01.webp]]
 ```
 
-For `lecture.vtt`, the app creates a study note with overview, concepts, timeline sections, checklist, review questions, and Obsidian keyword links.
+For `lecture.vtt`, the app creates a structured study note with an overview, key concepts, and timeline-style lecture sections.
 
 ## Lecture Notes Future Direction
 

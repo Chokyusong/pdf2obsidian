@@ -235,9 +235,6 @@ TRANSLATIONS = {
         "language_auto": "Same as source",
         "language_ko": "Korean",
         "language_en": "English",
-        "keep_timestamps": "Keep timestamps",
-        "generate_review_questions": "Generate review questions",
-        "generate_checklist": "Generate checklist",
         "output_mode_hint": (
             "Output Mode works separately from AI Mode. Default is Lecture Reconstruction MD."
         ),
@@ -380,9 +377,6 @@ TRANSLATIONS = {
         "language_auto": "원문 언어 유지",
         "language_ko": "한국어",
         "language_en": "영어",
-        "keep_timestamps": "타임스탬프 유지",
-        "generate_review_questions": "복습 질문 생성",
-        "generate_checklist": "체크리스트 생성",
         "output_mode_hint": (
             "Output Mode는 AI Mode와 별도로 동작합니다. 기본값은 강의 재구성 MD입니다."
         ),
@@ -661,13 +655,6 @@ class MainWindow(QMainWindow):
         self.ollama_pull_button = QPushButton()
         self.ollama_pull_button.clicked.connect(self.pull_selected_ollama_model)
         self.ollama_pull_worker: OllamaPullWorker | None = None
-
-        self.keep_timestamps_checkbox = QCheckBox()
-        self.keep_timestamps_checkbox.setChecked(False)
-        self.review_questions_checkbox = QCheckBox()
-        self.review_questions_checkbox.setChecked(False)
-        self.checklist_checkbox = QCheckBox()
-        self.checklist_checkbox.setChecked(False)
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
@@ -1037,9 +1024,6 @@ class MainWindow(QMainWindow):
         self.quality_label.setText(self.tr("quality"))
         self.ocr_checkbox.setText(self.tr("ocr"))
         self.separator_checkbox.setText(self.tr("separator"))
-        self.keep_timestamps_checkbox.setText(self.tr("keep_timestamps"))
-        self.review_questions_checkbox.setText(self.tr("generate_review_questions"))
-        self.checklist_checkbox.setText(self.tr("generate_checklist"))
         self.transcript_preserve_label.setText(self.tr("transcript_preserve"))
         self.ai_mode_label.setText(self.tr("ai_mode"))
         self.output_mode_label.setText(self.tr("output_mode"))
@@ -1405,14 +1389,10 @@ class MainWindow(QMainWindow):
             mode=self.mode_combo.currentData(),
             pdf_output_format=self.pdf_output_combo.currentData() or "markdown_image",
             transcript_preserve_level=self.preserve_combo.currentData(),
-            transcript_output_format=self.output_mode_combo.currentData(),
             transcript_ai_mode=selected_ai_mode,
             transcript_output_mode=self.output_mode_combo.currentData() or "study_note",
             transcript_output_language=self.output_language_combo.currentData() or "auto",
             ollama_model=selected_ollama_model,
-            transcript_keep_timestamps=False,
-            transcript_review_questions=False,
-            transcript_checklist=False,
         )
 
         self.progress_bar.setValue(0)

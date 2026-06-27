@@ -30,6 +30,20 @@ PDF2Obsidian first tries `winget`. If that fails, it downloads and runs the offi
 
 Automatic setup starts only after the user clicks the setup button and confirms the prompt.
 
+## Automatic Setup Safety Notes
+
+- Automatic setup is optional. It runs only after you choose `Local AI (Ollama)`,
+  click the setup button, and confirm the prompt.
+- PDF2Obsidian tries `winget` first because it is the standard Windows package
+  manager path.
+- If `winget` fails, PDF2Obsidian opens the official Ollama installer flow from
+  the Ollama download source.
+- If you do not want automatic setup, use `Open Manual Install Page` and install
+  Ollama yourself.
+- Model downloads happen through the local Ollama installation.
+- PDF2Obsidian does not upload your files to OpenAI, Claude, Gemini, or another
+  external AI API when using Basic mode or Local AI mode.
+
 ## Step 2. Check Ollama in PDF2Obsidian
 
 1. Open PDF2Obsidian.

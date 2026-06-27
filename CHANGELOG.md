@@ -5,6 +5,11 @@
 ### Added
 
 - Added public design decision and release checklist documentation.
+- Added documentation for PDF conversion limits, output folder collision behavior, and Ollama automatic setup safety notes.
+
+### Changed
+
+- Removed unused GUI transcript toggles for timestamps, review questions, and checklist generation.
 
 ## 0.1.5 - 2026-06-27
 

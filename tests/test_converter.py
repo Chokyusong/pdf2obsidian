@@ -109,6 +109,33 @@ def test_convert_files_reports_pdf_page_progress(tmp_path):
     assert any("Processing PDF page 1/3" in message for message in logs)
 
 
+def test_basic_transcript_conversion_omits_removed_optional_sections(tmp_path):
+    transcript_path = tmp_path / "lecture.vtt"
+    output_root = tmp_path / "output"
+    transcript_path.write_text(
+        "\n".join(
+            [
+                "WEBVTT",
+                "",
+                "00:00:01.000 --> 00:00:04.000",
+                "오늘은 목표 설정 방법을 설명합니다.",
+                "",
+                "00:00:05.000 --> 00:00:08.000",
+                "반드시 실행 계획을 작성하세요.",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = convert_file(transcript_path, ConversionOptions(output_root=output_root))
+
+    markdown = result.markdown_path.read_text(encoding="utf-8")
+
+    assert "## 복습 질문" not in markdown
+    assert "## 실행 체크리스트" not in markdown
+    assert "00:00" not in markdown
+
+
 def test_transcript_ollama_failure_raises_instead_of_fallback(tmp_path, monkeypatch):
     transcript_path = tmp_path / "lecture.txt"
     output_root = tmp_path / "output"

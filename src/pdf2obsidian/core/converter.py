@@ -53,9 +53,6 @@ class ConversionOptions:
     transcript_output_language: str = "auto"
     ollama_model: str = "qwen2.5:7b"
     ollama_base_url: str = "http://localhost:11434"
-    transcript_keep_timestamps: bool = True
-    transcript_review_questions: bool = True
-    transcript_checklist: bool = True
 
 
 @dataclass(frozen=True)
@@ -249,9 +246,9 @@ def convert_file(
             blocks=blocks,
             preserve_level=options.transcript_preserve_level,
             output_format=output_mode,
-            keep_timestamps=options.transcript_keep_timestamps,
-            include_review_questions=options.transcript_review_questions,
-            include_checklist=options.transcript_checklist,
+            keep_timestamps=False,
+            include_review_questions=False,
+            include_checklist=False,
         )
         emit_progress(100, f"Finished transcript conversion: {source.name}")
         return ConversionResult(source, item_dir, markdown_path, "transcript")
