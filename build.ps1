@@ -5,33 +5,42 @@ if (-not $localAppData) {
     $localAppData = $env:LOCALAPPDATA
 }
 $localPython = Join-Path $localAppData "Programs\Python\Python312\python.exe"
-$pythonCandidates = @(
-    "py",
-    "python",
-    (Join-Path $env:USERPROFILE ".cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe")
-)
+$pythonCandidates = @()
+$pythonCandidates += $localPython
+
+foreach ($pythonRoot in @($env:pythonLocation, $env:Python_ROOT_DIR, $env:Python3_ROOT_DIR)) {
+    if ($pythonRoot) {
+        $pythonCandidates += (Join-Path $pythonRoot "python.exe")
+    }
+}
+
+if ($env:USERPROFILE) {
+    $pythonCandidates += (Join-Path $env:USERPROFILE ".cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe")
+}
+
+$pythonCandidates += "python"
+$pythonCandidates += "py"
 
 $python = $null
-if (Test-Path -LiteralPath $localPython) {
-    $python = $localPython
-} else {
-    foreach ($candidate in $pythonCandidates) {
-        try {
-            $source = $null
-            if (Test-Path -LiteralPath $candidate) {
-                $source = $candidate
-            } else {
-                $command = Get-Command $candidate -ErrorAction Stop
-                $source = $command.Source
-            }
-            & $source --version *> $null
-            if ($LASTEXITCODE -eq 0) {
-                $python = $source
-                break
-            }
-        } catch {
-            continue
+foreach ($candidate in $pythonCandidates) {
+    if (-not $candidate) {
+        continue
+    }
+    try {
+        $source = $null
+        if (Test-Path -LiteralPath $candidate) {
+            $source = $candidate
+        } else {
+            $command = Get-Command $candidate -ErrorAction Stop
+            $source = $command.Source
         }
+        & $source --version *> $null
+        if ($LASTEXITCODE -eq 0) {
+            $python = $source
+            break
+        }
+    } catch {
+        continue
     }
 }
 
