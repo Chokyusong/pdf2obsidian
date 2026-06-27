@@ -26,8 +26,8 @@ It is designed for Windows users who want to keep their files on their own compu
 
 The latest Windows build is available from GitHub Releases:
 
-- [PDF2Obsidian v0.1.5](https://github.com/Chokyusong/pdf2obsidian/releases/tag/v0.1.5)
-- [Download Windows ZIP](https://github.com/Chokyusong/pdf2obsidian/releases/download/v0.1.5/PDF2Obsidian-v0.1.5-windows.zip)
+- [PDF2Obsidian v0.1.6](https://github.com/Chokyusong/pdf2obsidian/releases/tag/v0.1.6)
+- [Download Windows ZIP](https://github.com/Chokyusong/pdf2obsidian/releases/download/v0.1.6/PDF2Obsidian-v0.1.6-windows.zip)
 
 ## Project Goal
 

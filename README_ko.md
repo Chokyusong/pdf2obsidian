@@ -26,8 +26,8 @@ PDF2Obsidian은 Obsidian 사용자와 학습자료 관리자를 위한 local-fir
 
 최신 Windows 빌드는 GitHub Releases에서 받을 수 있습니다.
 
-- [PDF2Obsidian v0.1.5](https://github.com/Chokyusong/pdf2obsidian/releases/tag/v0.1.5)
-- [Windows ZIP 다운로드](https://github.com/Chokyusong/pdf2obsidian/releases/download/v0.1.5/PDF2Obsidian-v0.1.5-windows.zip)
+- [PDF2Obsidian v0.1.6](https://github.com/Chokyusong/pdf2obsidian/releases/tag/v0.1.6)
+- [Windows ZIP 다운로드](https://github.com/Chokyusong/pdf2obsidian/releases/download/v0.1.6/PDF2Obsidian-v0.1.6-windows.zip)
 
 ## 프로젝트 목표
 

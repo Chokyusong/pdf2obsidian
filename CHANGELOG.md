@@ -2,14 +2,22 @@
 
 ## Unreleased
 
+## 0.1.6 - 2026-06-27
+
 ### Added
 
 - Added public design decision and release checklist documentation.
 - Added documentation for PDF conversion limits, output folder collision behavior, and Ollama automatic setup safety notes.
+- Added sample workflow regression tests for transcript to Markdown, PDF to Markdown plus WebP assets, and PDF to compressed PDF.
 
 ### Changed
 
 - Removed unused GUI transcript toggles for timestamps, review questions, and checklist generation.
+- Updated release links to v0.1.6.
+
+### Fixed
+
+- Fixed GitHub Actions Windows build Python selection so `build.ps1` uses the workflow-provided Python before `py.exe`.
 
 ## 0.1.5 - 2026-06-27
 
